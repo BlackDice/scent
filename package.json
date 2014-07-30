@@ -1,10 +1,10 @@
 {
-  "name": "senco",
+  "name": "scent",
   "private": true,
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git@git.mrammor.com:library/senco.git"
+    "url": "git@git.mrammor.com:library/scent.git"
   },
   "license": "BlackDice"
 }
