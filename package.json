@@ -1,0 +1,10 @@
+{
+  "name": "senco",
+  "private": true,
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git@git.mrammor.com:library/senco.git"
+  },
+  "license": "BlackDice"
+}
