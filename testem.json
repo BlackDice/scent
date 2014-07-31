@@ -1,0 +1,20 @@
+{
+	"framework": "mocha",
+	"src_files": [
+		"src/*.coffee",
+		"test/*.coffee"
+	],
+	"serve_files": [
+		"test/bundle.js"
+	],
+	"before_tests": "browserify -o test/bundle.js -t coffeeify --extension=.coffee test/run.coffee",
+	"after_tests": "del test/bundle.js & rm test/bundle.js",
+    "launchers": {
+        "Node": {
+            "command": "mocha -R tap test/run.coffee",
+            "protocol": "tap"
+        }
+    },
+    "launch_in_dev": [ "Node" ],
+    "launch_in_ci": [ "Node", "Chrome", "IE" ]
+}

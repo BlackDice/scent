@@ -1,0 +1,4 @@
+--reporter dot
+--check-leaks
+--ui bdd
+--compilers coffee:coffee-script/register

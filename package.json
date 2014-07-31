@@ -6,5 +6,18 @@
     "type": "git",
     "url": "git@git.mrammor.com:library/scent.git"
   },
-  "license": "BlackDice"
+  "license": "BlackDice",
+  "scripts": {
+    "test": "mocha -R spec"
+  },
+  "devDependencies": {
+    "sinon-chai": "^2.5.0",
+    "chai-as-promised": "^4.1.1",
+    "sinon": "^1.10.3",
+    "chai": "^1.9.1",
+    "coffeeify": "^0.7.0"
+  },
+  "dependencies": {
+    "es6": "0.0.7"
+  }
 }
