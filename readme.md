@@ -1,12 +1,12 @@
-# S(ystem) C(omponent) Ent(ity)
+# SCENT: A System-Component-Entity framework
 
-Scent is library based on [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters.
+Scent is framework based on [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters.
 
 Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all it's properties together. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
 
 ## Terminology
 
-Overview of the terms used in the library.
+Overview of the terms used in the framework.
 
 The **Component** is smallest part the design. It is data storage unit that is meant to be added to or removed from the entity.
 
