@@ -1,4 +1,4 @@
-# S(*ystem*) C(*omponent*) Ent(*ity*)
+# S(ystem) C(omponent) Ent(ity)
 
 Scent is library based on [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters.
 
