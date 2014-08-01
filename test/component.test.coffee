@@ -2,6 +2,7 @@
 Component = require '../src/component'
 
 describe 'Component', ->
+	
 	it 'should be a function', ->
 		expect(Component).to.be.a "function"
 
@@ -20,43 +21,64 @@ describe 'Component', ->
 		expect(-> Component ['test']).to.not.throw
 		expect(-> Component [1, 'test']).to.not.throw
 
-	it 'should return a function used to create component', ->
+	it 'should throw error when specified field is reserved word', ->
+		expect(-> Component 'constructor').to.throw TypeError, /reserved word/
+		expect(-> Component 'dispose').to.throw TypeError, /reserved word/
+
+	it 'should return a constructor function used to create component', ->
 		expect(Component 'test').to.be.a "function"
+
+	beforeEach ->
+		@fields = ['test1', 'test2', 'test3']
 
 	describe 'constructor', ->
 
 		beforeEach ->
-			@fields = ['test1', 'test2', 'test3']
-			@component = Component @fields
+			@cComponent = Component @fields
 
-		it 'should be frozen to forbin modifications', ->
-			expect(Object.isFrozen @component).to.be.true
+		it 'should forbid to add custom properties to itself', ->
+			@cComponent.customProperty
+			expect(@cComponent).to.not.have.property "customProperty"
 
 		it 'should expose list of defined properties when calling toString()', ->
 			for field in @fields
-				expect(@component.toString()).to.contain field
+				expect(@cComponent.toString()).to.contain field
 
 		it 'should return new object upon calling', ->
-			expected = do @component
+			expected = do @cComponent
 			expect(expected).to.be.an 'object'
-			expect(do @component).to.not.equal expected
+			expect(do @cComponent).to.not.equal expected
 
-		it 'should be set as constructor on returned object', ->
-			actual = do @component
-			expect(actual).to.have.property "constructor", @component
+	describe 'instance', ->
+
+		beforeEach ->
+			@cComponent = Component @fields
+			@component = do @cComponent
+
+		it 'should have a constructor function stored in constructor property', ->
+			expect(@component).to.have.property "constructor", @cComponent
 
 		it 'should have properties defined by fields argument', ->
-			actual = do @component
 			for field in @fields
-				expect(actual).to.have.property field
+				expect(@component).to.have.ownProperty field
 
-		it 'should allow to set and retrieve property value', ->
-			actual = do @component
+		it 'should allow to get and set property value', ->
 			for field, i in @fields
-				actual[field] = i + 10
-				expect(actual).to.have.property field, i + 10
+				@component[field] = i
+				expect(@component[field]).to.equal i
 
 		it 'should forbid to set properties out of defined set', ->
-			actual = do @component
-			actual.fail = yes
-			expect(actual).to.not.have.property "fail"
+			@component.fail = yes
+			expect(@component).to.not.have.property "fail"
+
+		describe 'dispose()', ->
+
+			it 'should be a function', ->
+				expect(@component).to.respondTo 'dispose'
+
+			it 'should unset all data of component', ->
+				@component.test1 = 'a'
+				@component.test3 = 'b'
+				@component.dispose()
+				expect(@component.test1).to.not.be.ok
+				expect(@component.test3).to.not.be.ok

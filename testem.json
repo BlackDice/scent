@@ -16,5 +16,5 @@
         }
     },
     "launch_in_dev": [ "Node" ],
-    "launch_in_ci": [ "Node", "Chrome", "IE" ]
+    "launch_in_ci": [ "Node" ]
 }
