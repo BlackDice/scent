@@ -90,3 +90,7 @@ Methods `add`, `replace` and `remove` returns entity object itself. You can use 
 		.replace foundation
 		.remove cWorker
 
+When you don't need entity any more, you can remove it from the game simply by calling `dispose` method. All components withing entity are disposed as well.
+
+	entity.dispose()
+	entity = null

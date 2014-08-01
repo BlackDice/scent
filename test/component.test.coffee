@@ -31,7 +31,7 @@ describe 'Component', ->
 	beforeEach ->
 		@fields = ['test1', 'test2', 'test3']
 
-	describe 'constructor', ->
+	describe 'factory', ->
 
 		beforeEach ->
 			@cComponent = Component @fields
@@ -82,3 +82,8 @@ describe 'Component', ->
 				@component.dispose()
 				expect(@component.test1).to.not.be.ok
 				expect(@component.test3).to.not.be.ok
+
+			it 'should destroy component completely if no data were set', ->
+				@component.dispose()
+				newComponent = do @cComponent
+				expect(newComponent).to.not.equal @component

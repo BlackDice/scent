@@ -24,6 +24,7 @@ module.exports = (fields) ->
 
 	props = fields.reduce createProps, Object.create(null)
 	proto = dispose: ->
+		return unless this.__data
 		this.__data.length = 0
 		pool.push this
 
