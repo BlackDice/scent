@@ -5,7 +5,7 @@ describe 'Component', ->
 	it 'should be a function', ->
 		expect(Component).to.be.a "function"
 
-	it 'expects at least one field name passed in first argument', ->
+	it 'expects string or array of at least one string passed in first argument', ->
 		toThrow = (msg, fn) -> 
 			expect(fn).to.throw TypeError, /no fields/, msg
 		toThrow 'void', Component
@@ -23,15 +23,18 @@ describe 'Component', ->
 	it 'should return a function used to create component', ->
 		expect(Component 'test').to.be.a "function"
 
-	it 'should return same function for the identical fields passed in', ->
-		expected = Component 'test'
-		expect(Component 'test').to.equal expected
-
 	describe 'constructor', ->
 
 		beforeEach ->
 			@fields = ['test1', 'test2', 'test3']
 			@component = Component @fields
+
+		it 'should be frozen to forbin modifications', ->
+			expect(Object.isFrozen @component).to.be.true
+
+		it 'should expose list of defined properties when calling toString()', ->
+			for field in @fields
+				expect(@component.toString()).to.contain field
 
 		it 'should return new object upon calling', ->
 			expected = do @component
