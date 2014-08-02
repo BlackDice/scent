@@ -19,8 +19,8 @@ describe 'Entity', ->
 		toThrow 'function', -> Entity new Function
 
 	it 'returns same value for the identical first argument', ->
-		expected = Entity(123)
-		expect(Entity 123).to.equal expected
+		expected = Entity(1)
+		expect(Entity 1).to.equal expected
 
 	describe 'instance', ->
 
@@ -31,6 +31,11 @@ describe 'Entity', ->
 			@alpha = do @cAlpha
 			@beta = do @cBeta
 
+		it 'has read-only id property when first argument passed in', ->
+			entityWithId = Entity 200
+			entityWithId.id = 100
+			expect(entityWithId).to.have.ownProperty "id", 200
+		
 		checkForComponent = (method) ->
 			expect(method).to.throw TypeError, /missing component/
 			checkForComponentType method
@@ -149,11 +154,26 @@ describe 'Entity', ->
 				expect(@entity.has @cAlpha).to.be.false
 				expect(@entity.has @cBeta).to.be.false
 
-			it 'should call dispose method of the component', ->
-				fakeComponent = createFakeComponent()
-				@entity.add fakeComponent
+			it 'should call dispose method of all components', ->
+				fakeComponent1 = createFakeComponent()
+				fakeComponent2 = createFakeComponent()
+				@entity.add fakeComponent1
+				@entity.add fakeComponent2
 				@entity.dispose()
-				expect(fakeComponent.disposed).to.be.true
+				expect(fakeComponent1.disposed).to.be.true
+				expect(fakeComponent2.disposed).to.be.true
+
+			it 'stored entity into the pool with no id is specified', ->
+				expected = do Entity
+				expected.dispose()
+				actual = do Entity
+				expect(actual).to.equal expected
+
+			it 'trashes entity with id specified', ->
+				expected = Entity 'trash'
+				expected.dispose()
+				actual = Entity 'trash'
+				expect(actual).to.not.equal expected
 
 		it 'works as expected', ->
 			alpha = do @cAlpha

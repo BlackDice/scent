@@ -11,25 +11,36 @@ module.exports = (id) ->
 			throw new TypeError 'invalid id for entity, expected string or number'
 
 	# Return existing entity
-	return entities.get id if entities.has id
+	return entity if hasId and entity = entities.get id
 
-	entity = Object.create Entity, '__map': value: new Map
+	# Fetch entity from the pool or create fresh one
+	if entityPool.length
+		entity = entityPool.pop()
+	else
+		entity = Object.create Entity, '__map': value: new Map
 
-	entities.set id, entity if hasId
+	# Handle entity with ID
+	if hasId	
+		Object.defineProperty entity, 'id', {enumerable: yes, get: -> id}
+		entities.set id, entity
 
 	Object.freeze entity
 	return entity
+
+entityPool = []
 
 Entity =
 	add: (component) ->
 		validateComponent component
 		if this.__map.has componentType = component.constructor
-			log 'entity %s already contains component of type %s', this, componentType
+			log 'entity %s already contains component of type %s, consider using replace method if this is intended', this, componentType
 		this.__map.set componentType, component
 		return this
 
 	replace: (component) ->
 		validateComponent component
+		unless this.__map.has componentType = component.constructor
+			log 'entity %s doesn\'t contain component of type %s, consider using add method you are adding new one', this, componentType
 		return this
 
 	has: (componentType) ->
@@ -50,6 +61,11 @@ Entity =
 		for component in this.__map.values
 			component.dispose()
 		this.__map.clear()
+		if this.id
+			entities.delete this.id
+			this.id = undefined
+		else
+			entityPool.push this
 
 validateComponent = (component) ->
 	unless component
