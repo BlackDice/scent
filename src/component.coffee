@@ -2,48 +2,57 @@ log = (require 'debug') 'scent:component'
 _ = require 'lodash'
 require 'es6'
 
-components = new Set
-reserved = ['constructor', 'toString', 'dispose']
+components = new Map
+reservedNames = ['entity']
 
-module.exports = (fields) ->
-	# Convert argument to array if none passed
-	fields = [fields] unless _.isArray fields
+module.exports = (name, fields) ->
+	unless _.isString name 
+		throw new TypeError 'missing name of the component'
 
-	# Filter out invalid fields
-	fields = fields.reduce reduceField, []
+	if ~reservedNames.indexOf name
+		throw new TypeError name + ' is reserved word and cannot be used for component name'
 
-	unless fields.length
-		throw new TypeError 'no fields specified for component'
+	if fields and not (_.isArray(fields) and (fields = fields.reduce reduceField, []).length)
+		throw new TypeError 'invalid fields specified for component: '+fields
 
-	id = fields.join('|')
-	if components.has id
-		log 'component with fields %j has been defined before', fields
-	else components.add id
+	return Component if Component = components.get name
 
-	pool = []
+	# log 'component with fields %j has been defined before', fields
 
-	props = fields.reduce createProps, Object.create(null)
-	proto = dispose: ->
-		return unless this.__data
-		this.__data.length = 0
-		pool.push this
+	props = Object.create(null)
+	proto = {dispose}
+
+	fields?.reduce createProps, props
 
 	Component = ->
-		return pool.pop() if pool.length
+		return pool.pop() if (pool = Component.__pool).length
 		component = Object.create proto, props
 		Object.seal component
 		return component
 
-	proto['constructor'] = Component
+	proto['component'] = Component
+
+	Component.__pool = []
+	Component.componentFields = fields
+	Component.componentName = name
 	Component.toString = -> 
-		"Component #{fields.join ', '}"	
+		"Component #{this.componentName}: " + this.componentFields?.join ', '
+
+	components.set name, Component
 
 	Object.freeze Component
 	return Component
 
+dispose = ->
+	return unless this.__data
+	this.__data.length = 0
+	this.component.__pool.push this
+
+reservedWords = ['component', 'dispose']	
+
 reduceField = (fields, field) ->
 	return fields unless _.isString(field)
-	if ~reserved.indexOf field
+	if ~reservedWords.indexOf field
 		throw TypeError "specified field #{field} is reserved word, choose another"
 	fields.push field
 	return fields
@@ -54,7 +63,7 @@ createProps = (props, field, i) ->
 		get: ->
 			return this.__data?[i]
 		set: (val) ->
-			data = this.__data or= [] 
+			data = this.__data or= new Array(this.component.componentFields.length)
 			data[i] = val
 		enumerable: yes
 	return props
