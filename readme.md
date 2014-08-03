@@ -1,8 +1,10 @@
 # SCENT: A System-Component-Entity framework
 
-Scent is framework based on [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters.
+*Make a great game with scent. It smells really good !*
 
-Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all its properties together. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
+Scent is framework heavily based on the [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters.
+
+Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all of its properties in one big messy object. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
 
 ## Terminology
 
@@ -12,9 +14,9 @@ The **Component** is smallest part the design. It is data storage unit that is m
 
 The **Entity** is any game object. It is composed of components designating the purpose of entity that way.
 
-The **System** is ... *TBD*
+The **Node** is small portion of the entity 
 
-The **Node** is ... *TBD*
+The **System** is ... *TBD*
 
 The **Engine** is ... *TBD*
 
@@ -104,9 +106,19 @@ When you don't need whole entity any more, you can remove it from the game simpl
 	entity.dispose()
 	entity = null # Need only if reference is held somewhere
 
+#### Multi-player entity
+
+As stated in the introduction, framework is made for use in multi-player game environment. Entity is prepared to this by having id property. This ID should be set by some kind of authority (like game server) and it can than be used to issue commands to work with these entities.
+
+	serverEntity = Entity 'character123'
+
+ID can be number or string, it's not constrained at all. Calling `Entity` with the same ID will return seamlessly the same entity.
+
+*Note that this kind of entity is not pooled so avoid disposing and creating them too much.* 
+
 ### Need for logic
 
-Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural). There should be many systems, each responsible for some of the game mechanics. System needs data to work with and those are stored in components.
+Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural). There should be many systems, each responsible for some of the game mechanics. System needs a data to work with and those are stored in components.
 
 Generally it would be very cumbersome if every system would need to loop through all entities in the game engine and check if they have components that are interesting for that system. To solve this issue, the framework contains objects called **node**.
 
@@ -118,7 +130,7 @@ Similarly to components, node has to be defined first too. You have to designate
 
 	nStructure = Node [cBuilding, cFoundation]
 
-Similarly to components, `nStructure` variable represents node type, but it's not a function you can call. This is different to components and node instances are created differently. There are two methods on the returned object which are used to notify the node about entity creation or removal.
+Similarly to components, `nStructure` variable represents node type, but it's not a function you can call. This is different to components as node instances are created internally. There are two methods on the returned object which can be used to notify  about entity creation or removal.
 
 	nStructure.addEntity entity
 	nStructure.removeEntity entity
@@ -128,7 +140,7 @@ There is no output from these methods. In case that entity fulfills the requirem
 	nStructure.head # first node in the list
 	nStructure.tail # last node in the list
 
-Each node instance has got `next` and `prev` properties pointing to its neighbors in the list. This can be used to iterate over the list. To keep this DRY and simple there is convenience method `each` method that simplifies looping for you. 
+Each node instance has got `next` and `prev` properties pointing to its neighbors in the list. This can be used to iterate over the list. To keep this DRY and simple there is convenience method `each` that simplify looping for you. 
 
 	nStructure.each (node) ->
 		# Do something with the node
@@ -141,6 +153,6 @@ Having node instance gives you direct access to requested components and also to
 	node = nStructure.list.head
 	node.building.floors += 1 # directly increase floors of cBuilding component
 	if node.foundation.material = 'steel' 
-		node.entity.dispose() # remove the entity from the game	
+		node.entity.dispose() # remove the entity from the game
 
 Of course you can still access components out of the defined set directly through entity property, but it's not recommended and you should only access components you are expecting to be in there.
