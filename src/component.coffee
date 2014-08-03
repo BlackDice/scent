@@ -4,20 +4,19 @@ _ = require 'lodash'
 require 'es6-shim'
 components = new Map
 
-reservedNames = ['entity']
 reservedFields = ['componentType', 'dispose']
 
-module.exports = (name, fields) ->
+module.exports = Component = (name, fields) ->
 	unless _.isString name 
 		throw new TypeError 'missing name of the component'
 
-	if ~reservedNames.indexOf name
+	if ~Component.reservedNames.indexOf name
 		throw new TypeError name + ' is reserved word and cannot be used for component name'
 
 	if fields and not (_.isArray(fields) and (fields = fields.reduce reduceField, []).length)
 		throw new TypeError 'invalid fields specified for component: '+fields
 
-	return Component if Component = components.get name
+	return Factory if Factory = components.get name
 
 	# log 'component with fields %j has been defined before', fields
 
@@ -26,24 +25,26 @@ module.exports = (name, fields) ->
 
 	fields?.reduce createProps, props
 
-	Component = ->
-		return pool.pop() if (pool = Component.__pool).length
+	Factory = ->
+		return pool.pop() if (pool = Factory.__pool).length
 		component = Object.create proto, props
 		Object.seal component
 		return component
 
-	proto['componentType'] = Component
+	proto['componentType'] = Factory
 
-	Component.__pool = []
-	Component.componentFields = fields
-	Component.componentName = name
-	Component.toString = -> 
+	Factory.__pool = []
+	Factory.componentFields = fields
+	Factory.componentName = name
+	Factory.toString = -> 
 		"Component #{this.componentName}: " + this.componentFields?.join ', '
 
-	components.set name, Component
+	components.set name, Factory
 
-	Object.freeze Component
-	return Component
+	Object.freeze Factory
+	return Factory
+
+Component.reservedNames = []
 
 dispose = ->
 	return unless this.__data

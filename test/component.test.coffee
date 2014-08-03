@@ -16,8 +16,9 @@ describe 'Component', ->
 		toThrow 'array', -> Component []
 		toThrow 'object', -> Component {}
 
-	it 'forbids name of component to be string entity', ->
-		expect(-> Component 'entity').to.throw TypeError, /reserved word/
+	it 'forbids to use reserved words', ->
+		Component.reservedNames.push word = 'donotusethis'
+		expect(-> Component word).to.throw TypeError, /reserved word/
 
 	it 'should return same value for identical name', ->
 		expected = Component 'name'
