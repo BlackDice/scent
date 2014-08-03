@@ -36,7 +36,8 @@ module.exports = Component = (name, fields) ->
 	Factory.__pool = []
 	Factory.componentFields = fields
 	Factory.componentName = name
-	Factory.toString = -> 
+	Factory.componentNumber = do findComponentNumber
+	Factory.toString = ->
 		"Component #{this.componentName}: " + this.componentFields?.join ', '
 
 	components.set name, Factory
@@ -45,6 +46,25 @@ module.exports = Component = (name, fields) ->
 	return Factory
 
 Component.reservedNames = []
+
+primes = []
+findComponentNumber = ->
+	len = primes.length
+	pr = primes[len - 1] or 1
+	loop
+		pr += if len > 2 then 2 else 1
+		divides = false
+		i = 0
+	
+		# discard the number if it divides by one earlier prime.
+		while i < len
+			if (pr % primes[i]) is 0
+				divides = true
+				break
+			i++
+		break unless divides is true
+	primes.push pr
+	return pr
 
 dispose = ->
 	return unless this.__data

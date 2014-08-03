@@ -57,6 +57,12 @@ describe 'Component', ->
 			expect(cComponent).to.have.ownProperty "componentName"
 			expect(cComponent.componentName).to.equal name
 
+		it 'should provide unique number of component in property componentNumber', ->
+			cComponent = Component 'hashed'
+			expect(cComponent).to.have.ownProperty "componentNumber"
+			cComponent2 = Component 'hashed2'
+			expect(cComponent2.componentNumber).to.not.equal cComponent.componentNumber
+		
 		it 'should provide list of defined fields property componentFields', ->
 			cComponent = Component 'withfields', @fields
 			expect(cComponent).to.have.ownProperty "componentFields"
