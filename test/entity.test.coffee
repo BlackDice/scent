@@ -1,6 +1,6 @@
 {expect, sinon} = require './setup'
 Entity = require '../src/entity'
-Component = require '../src/component'
+
 
 describe 'Entity', ->
 	
@@ -24,10 +24,21 @@ describe 'Entity', ->
 
 	describe 'instance', ->
 
+		createMockComponent = ->
+			Component = ->
+				component = Object.create 
+					dispose: -> this.disposed = yes
+				component.componentType = Component
+				component.disposed = no
+				return component
+			Component.componentName = 'mock'
+			Object.freeze Component
+			return Component
+
 		beforeEach ->
 			@entity = do Entity
-			@cAlpha = Component 'alpha'
-			@cBeta = Component 'beta'
+			@cAlpha = createMockComponent()
+			@cBeta = createMockComponent()
 			@alpha = do @cAlpha
 			@beta = do @cBeta
 
@@ -76,6 +87,13 @@ describe 'Entity', ->
 			it 'should return entity itself', ->
 				expect(@entity.add @alpha).to.equal @entity
 
+			it 'should replace existing component', ->
+				@entity.add @alpha
+				newAlpha = do @cAlpha
+				@entity.replace newAlpha
+				expect(@entity.get @cAlpha).to.equal newAlpha
+				expect(@entity.has @cAlpha).to.be.true
+
 		it 'responds to has method', ->
 			expect(@entity).to.respondTo 'has'
 
@@ -106,12 +124,6 @@ describe 'Entity', ->
 				@entity.add @alpha
 				expect(@entity.get @cAlpha).to.equal @alpha
 
-		createFakeComponent = ->
-			fakeComponent = Object.create dispose: -> this.disposed = yes
-			fakeComponent.disposed = no
-			fakeComponent.constructor = Object.freeze(->)
-			return fakeComponent
-
 		it 'responds to remove method', ->
 			expect(@entity).to.respondTo 'remove'
 
@@ -131,16 +143,14 @@ describe 'Entity', ->
 				expect(@entity.has @cAlpha).to.be.false
 
 			it 'should call dispose method of removed component by default', ->
-				fakeComponent = createFakeComponent()
-				@entity.add fakeComponent
-				@entity.remove fakeComponent.constructor
-				expect(fakeComponent.disposed).to.be.true
+				@entity.add @alpha
+				@entity.remove @cAlpha
+				expect(@alpha.disposed).to.be.true
 
 			it 'should not call dispose of component if second argument is false', ->
-				fakeComponent = createFakeComponent()
-				@entity.add fakeComponent
-				@entity.remove fakeComponent.constructor, false
-				expect(fakeComponent.disposed).to.be.false
+				@entity.add @alpha
+				@entity.remove @cAlpha, false
+				expect(@alpha.disposed).to.be.false
 
 		it 'responds to dispose method', ->
 			expect(@entity).to.respondTo 'dispose'
@@ -155,13 +165,11 @@ describe 'Entity', ->
 				expect(@entity.has @cBeta).to.be.false
 
 			it 'should call dispose method of all components', ->
-				fakeComponent1 = createFakeComponent()
-				fakeComponent2 = createFakeComponent()
-				@entity.add fakeComponent1
-				@entity.add fakeComponent2
+				@entity.add @alpha
+				@entity.add @beta
 				@entity.dispose()
-				expect(fakeComponent1.disposed).to.be.true
-				expect(fakeComponent2.disposed).to.be.true
+				expect(@alpha.disposed).to.be.true
+				expect(@alpha.disposed).to.be.true
 
 			it 'stored entity into the pool with no id is specified', ->
 				expected = do Entity
@@ -176,15 +184,16 @@ describe 'Entity', ->
 				expect(actual).to.not.equal expected
 
 		it 'works as expected', ->
-			alpha = do @cAlpha
-			beta = do @cBeta
-			
-			@entity.add alpha
-			expect(@entity.get @cAlpha).to.equal alpha
+			@entity.add @alpha
+			expect(@entity.get @cAlpha).to.equal @alpha
 			expect(@entity.has @cAlpha).to.be.true
 			
-			@entity.add beta
+			newAlpha = do @cAlpha
+			@entity.replace newAlpha
+			expect(@entity.get @cAlpha).to.equal newAlpha
+
+			@entity.add @beta
 			@entity.remove @cAlpha
 
-			expect(@entity.get @cBeta).to.equal beta
+			expect(@entity.get @cBeta).to.equal @beta
 			expect(@entity.has @cBeta).to.be.true

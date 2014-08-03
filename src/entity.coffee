@@ -32,15 +32,14 @@ entityPool = []
 Entity =
 	add: (component) ->
 		validateComponent component
-		if this.__map.has componentType = component.constructor
+		if this.__map.has componentType = component.componentType
 			log 'entity %s already contains component of type %s, consider using replace method if this is intended', this, componentType
 		this.__map.set componentType, component
 		return this
 
 	replace: (component) ->
 		validateComponent component
-		unless this.__map.has componentType = component.constructor
-			log 'entity %s doesn\'t contain component of type %s, consider using add method you are adding new one', this, componentType
+		this.__map.set component.componentType, component
 		return this
 
 	has: (componentType) ->
@@ -70,9 +69,9 @@ Entity =
 validateComponent = (component) ->
 	unless component
 		throw new TypeError 'missing component for entity'
-	validateComponentType component.constructor, _.isFunction component.dispose
+	validateComponentType component.componentType
 
-validateComponentType = (componentType, isComponent) ->
-	if false is isComponent or not (_.isObject(componentType) and Object.isFrozen componentType)
+validateComponentType = (componentType) ->
+	unless _.isObject(componentType) and componentType.hasOwnProperty('componentName')
 		throw new TypeError 'invalid component for entity'
 	
