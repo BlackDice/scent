@@ -4,6 +4,7 @@ require 'es6'
 
 components = new Map
 reservedNames = ['entity']
+reservedFields = ['componentType', 'dispose']
 
 module.exports = (name, fields) ->
 	unless _.isString name 
@@ -30,7 +31,7 @@ module.exports = (name, fields) ->
 		Object.seal component
 		return component
 
-	proto['component'] = Component
+	proto['componentType'] = Component
 
 	Component.__pool = []
 	Component.componentFields = fields
@@ -46,13 +47,11 @@ module.exports = (name, fields) ->
 dispose = ->
 	return unless this.__data
 	this.__data.length = 0
-	this.component.__pool.push this
-
-reservedWords = ['component', 'dispose']	
+	this.componentType.__pool.push this
 
 reduceField = (fields, field) ->
 	return fields unless _.isString(field)
-	if ~reservedWords.indexOf field
+	if ~reservedFields.indexOf field
 		throw TypeError "specified field #{field} is reserved word, choose another"
 	fields.push field
 	return fields
@@ -63,7 +62,7 @@ createProps = (props, field, i) ->
 		get: ->
 			return this.__data?[i]
 		set: (val) ->
-			data = this.__data or= new Array(this.component.componentFields.length)
+			data = this.__data or= new Array(this.componentType.componentFields.length)
 			data[i] = val
 		enumerable: yes
 	return props

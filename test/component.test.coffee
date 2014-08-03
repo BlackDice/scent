@@ -35,7 +35,7 @@ describe 'Component', ->
 		toThrow 'object', -> Component 'name', {}
 
 	it 'should throw error when specified field is reserved word', ->
-		expect(-> Component 'name', ['component']).to.throw TypeError, /reserved word/
+		expect(-> Component 'name', ['componentType']).to.throw TypeError, /reserved word/
 		expect(-> Component 'name', ['dispose']).to.throw TypeError, /reserved word/
 
 	it 'should return a factory function used to create component', ->
@@ -79,8 +79,8 @@ describe 'Component', ->
 			@cComponent = Component 'test', @fields
 			@component = do @cComponent
 
-		it 'should have a factory function stored in property component', ->
-			expect(@component).to.have.property "component", @cComponent
+		it 'should have a factory function stored in property componentType', ->
+			expect(@component).to.have.property "componentType", @cComponent
 
 		it 'should have properties defined by fields argument', ->
 			for field in @fields
