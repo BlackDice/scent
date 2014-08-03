@@ -1,7 +1,6 @@
 {expect, sinon} = require './setup'
 Entity = require '../src/entity'
 
-
 describe 'Entity', ->
 	
 	it 'should be a function', ->
@@ -167,6 +166,7 @@ describe 'Entity', ->
 			it 'should call dispose method of all components', ->
 				@entity.add @alpha
 				@entity.add @beta
+				debugger
 				@entity.dispose()
 				expect(@alpha.disposed).to.be.true
 				expect(@alpha.disposed).to.be.true

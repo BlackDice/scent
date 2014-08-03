@@ -1,7 +1,7 @@
 log = (require 'debug') 'scent:entity'
 _ = require 'lodash'
 
-require 'es6'
+require 'es6-shim'
 entities = new Map
 
 module.exports = (id) ->
@@ -57,14 +57,16 @@ Entity =
 		return this.__map.delete(componentType)
 
 	dispose: ->
-		for component in this.__map.values
-			component.dispose()
+		this.__map.forEach disposeComponent
 		this.__map.clear()
 		if this.id
 			entities.delete this.id
 			this.id = undefined
 		else
 			entityPool.push this
+
+disposeComponent = (component) ->
+	component.dispose()
 
 validateComponent = (component) ->
 	unless component

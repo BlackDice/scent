@@ -1,8 +1,9 @@
 log = (require 'debug') 'scent:component'
 _ = require 'lodash'
-require 'es6'
 
+require 'es6-shim'
 components = new Map
+
 reservedNames = ['entity']
 reservedFields = ['componentType', 'dispose']
 
