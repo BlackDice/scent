@@ -28,9 +28,10 @@ This is usually the first step in the design of the game structure. To be able t
 
 First argument is the name of the component. It helps to identify what are you currently looking at and also to automate some other tasks. The resulting variable `cBuilding` is a **factory function** used to create component instance that can hold the data. 
 
-You can completely omit list of properties. That is useful for components called **markers**.
+You can completely omit list of properties. That is useful for components called **markers**. Name for these component should start with some word expressing state, like 'has' or 'is'.
 
-	cIsCollidable = Component 'isCollidable'
+	cHasRoof = Component 'hasRoof'
+	cIsBulletproof = Component 'isBulletproof'
 
 Name of the component is available in the read-only property `name`.
 
@@ -102,3 +103,44 @@ When you don't need whole entity any more, you can remove it from the game simpl
 
 	entity.dispose()
 	entity = null # Need only if reference is held somewhere
+
+### Need for logic
+
+Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural). There should be many systems, each responsible for some of the game mechanics. System needs data to work with and those are stored in components.
+
+Generally it would be very cumbersome if every system would need to loop through all entities in the game engine and check if they have components that are interesting for that system. To solve this issue, the framework contains objects called **node**.
+
+Each node is tightly coupled to exactly one entity, but it exists only if entity has required set of components. For every entity there can be numerous nodes. In the end you have nice and tidy list of entities having components you are interested in. You don't need to loop through all of them and filtering them every time.
+
+#### Define the node
+
+Similarly to components, node has to be defined first too. You have to designate what components are you interested in. This is as simple as it can possibly be.
+
+	nStructure = Node [cBuilding, cFoundation]
+
+Similarly to components, `nStructure` variable represents node type, but it's not a function you can call. This is different to components and node instances are created differently. There are two methods on the returned object which are used to notify the node about entity creation or removal.
+
+	nStructure.addEntity entity
+	nStructure.removeEntity entity
+
+There is no output from these methods. In case that entity fulfills the requirements, node instance will be created and added to the internal list. For performance reasons it is linked list structure and you have direct access only to first and last node instance.
+
+	nStructure.head # first node in the list
+	nStructure.tail # last node in the list
+
+Each node instance has got `next` and `prev` properties pointing to its neighbors in the list. This can be used to iterate over the list. To keep this DRY and simple there is convenience method `each` method that simplifies looping for you. 
+
+	nStructure.each (node) ->
+		# Do something with the node
+
+		# If you want to stop the loop for some reason...
+		return false
+
+Having node instance gives you direct access to requested components and also to the entire entity in case you want to work with that somehow. Names of components are used here to define property name for easy access.
+
+	node = nStructure.list.head
+	node.building.floors += 1 # directly increase floors of cBuilding component
+	if node.foundation.material = 'steel' 
+		node.entity.dispose() # remove the entity from the game	
+
+Of course you can still access components out of the defined set directly through entity property, but it's not recommended and you should only access components you are expecting to be in there.
