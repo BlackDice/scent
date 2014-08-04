@@ -1,5 +1,6 @@
 {expect} = require './setup'
 Component = require '../src/component'
+symbols = require '../src/symbols'
 
 describe 'Component', ->
 	
@@ -16,10 +17,6 @@ describe 'Component', ->
 		toThrow 'array', -> Component []
 		toThrow 'object', -> Component {}
 
-	it 'forbids to use reserved words', ->
-		Component.reservedNames.push word = 'donotusethis'
-		expect(-> Component word).to.throw TypeError, /reserved word/
-
 	it 'should return same value for identical name', ->
 		expected = Component 'name'
 		expect(Component 'name').to.equal expected
@@ -27,17 +24,13 @@ describe 'Component', ->
 	it 'optionally expects array of string passed in second argument', ->
 		toThrow = (msg, fn) -> 
 			expect(fn).to.throw TypeError, /invalid fields/, msg
-		toThrow 'number', -> Component 'name', 1
-		toThrow 'bool', -> Component 'name', true
-		toThrow 'string', -> Component 'name', 'nothing'
-		toThrow 'empty array', -> Component 'name', []
-		toThrow 'num array', -> Component 'name', [1]
-		toThrow 'bool array', -> Component 'name', [true]
-		toThrow 'object', -> Component 'name', {}
-
-	it 'should throw error when specified field is reserved word', ->
-		expect(-> Component 'name', ['componentType']).to.throw TypeError, /reserved word/
-		expect(-> Component 'name', ['dispose']).to.throw TypeError, /reserved word/
+		toThrow 'number', -> Component 'number', 1
+		toThrow 'bool', -> Component 'bool', true
+		toThrow 'string', -> Component 'string', 'nothing'
+		toThrow 'empty array', -> Component 'empty array', []
+		toThrow 'num array', -> Component 'num array', [1]
+		toThrow 'bool array', -> Component 'bool array', [true]
+		toThrow 'object', -> Component 'object', {}
 
 	it 'should return a factory function used to create component', ->
 		expect(Component 'factory').to.be.a "function"
@@ -52,21 +45,19 @@ describe 'Component', ->
 			cComponent.customProperty
 			expect(cComponent).to.not.have.property "customProperty"
 
-		it 'should provide name of component in property componentName', ->
+		it 'should provide name of component in @@name', ->
 			cComponent = Component name = 'withname'
-			expect(cComponent).to.have.ownProperty "componentName"
-			expect(cComponent.componentName).to.equal name
+			expect(cComponent[symbols.sName]).to.equal name
 
-		it 'should provide unique number of component in property componentNumber', ->
+		it 'should provide unique number of component in property @@componentNumber', ->
 			cComponent = Component 'hashed'
-			expect(cComponent).to.have.ownProperty "componentNumber"
+			expect(cComponent[symbols.sComponentNumber]).to.be.a "Number"
 			cComponent2 = Component 'hashed2'
-			expect(cComponent2.componentNumber).to.not.equal cComponent.componentNumber
+			expect(cComponent2[symbols.sComponentNumber]).to.not.equal cComponent[symbols.componentNumber]
 		
-		it 'should provide list of defined fields property componentFields', ->
+		it 'should provide list of defined fields in @@fields', ->
 			cComponent = Component 'withfields', @fields
-			expect(cComponent).to.have.ownProperty "componentFields"
-			expect(cComponent.componentFields).to.eql @fields
+			expect(cComponent[symbols.sFields]).to.eql @fields
 
 		it 'should expose list of defined properties when calling toString()', ->
 			cComponent = Component 'toString', @fields
@@ -86,8 +77,8 @@ describe 'Component', ->
 			@cComponent = Component 'test', @fields
 			@component = do @cComponent
 
-		it 'should have a factory function stored in property componentType', ->
-			expect(@component).to.have.property "componentType", @cComponent
+		it 'should have a factory function stored in @@type', ->
+			expect(@component[symbols.sType]).to.eql @cComponent
 
 		it 'should have properties defined by fields argument', ->
 			for field in @fields
@@ -102,25 +93,25 @@ describe 'Component', ->
 			@component.fail = yes
 			expect(@component).to.not.have.property "fail"
 
-		describe 'dispose()', ->
+		describe '@@dispose', ->
 
 			it 'should be a function', ->
-				expect(@component).to.respondTo 'dispose'
+				expect(@component[symbols.sDispose]).to.be.an "function"
 
 			it 'should destroy component completely if no data were set', ->
-				@component.dispose()
+				do @component[symbols.sDispose]
 				newComponent = do @cComponent
 				expect(newComponent).to.not.equal @component
 
 			it 'should unset all data of the component', ->
 				@component.test1 = 'a'
 				@component.test3 = 'b'
-				@component.dispose()
+				do @component[symbols.sDispose]
 				expect(@component.test1).to.not.be.ok
 				expect(@component.test3).to.not.be.ok
 
 			it 'should keep disposed component for next use', ->
 				@component.test2 = 'foo'
-				@component.dispose()
+				do @component[symbols.sDispose]
 				actual = do @cComponent
 				expect(actual).to.equal @component

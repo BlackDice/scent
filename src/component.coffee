@@ -1,51 +1,56 @@
 log = (require 'debug') 'scent:component'
 _ = require 'lodash'
+fast = require 'fast.js'
 
 require 'es6-shim'
 components = new Map
 
-reservedFields = ['componentType', 'dispose']
+symbols = require './symbols'
+{Symbol, sType} = symbols
+sPool = Symbol 'pool of disposed components'
+sData = Symbol 'data array for the component'
+
+emptyFields = []
 
 module.exports = Component = (name, fields) ->
 	unless _.isString name 
 		throw new TypeError 'missing name of the component'
 
-	if ~Component.reservedNames.indexOf name
-		throw new TypeError name + ' is reserved word and cannot be used for component name'
-
-	if fields and not (_.isArray(fields) and (fields = fields.reduce reduceField, []).length)
-		throw new TypeError 'invalid fields specified for component: '+fields
-
+	# Return existing factory by the name
 	return Factory if Factory = components.get name
+
+	if fields and not (_.isArray(fields) and (fields = fast.reduce fields, reduceField, []).length)
+		throw new TypeError 'invalid fields specified for component: '+fields
 
 	# log 'component with fields %j has been defined before', fields
 
+	# Create properties based on the fields
 	props = Object.create(null)
-	proto = {dispose}
+	fast.reduce fields, createProps, props if fields
 
-	fields?.reduce createProps, props
+	proto = {}
+	proto[symbols.sDispose] = dispose
 
 	Factory = ->
-		return pool.pop() if (pool = Factory.__pool).length
+		return pool.pop() if (pool = Factory[sPool]).length
 		component = Object.create proto, props
 		Object.seal component
 		return component
 
-	proto['componentType'] = Factory
+	proto[sType] = Factory
 
-	Factory.__pool = []
-	Factory.componentFields = fields
-	Factory.componentName = name
-	Factory.componentNumber = do findComponentNumber
+	Factory[sPool] = [] # private pool of components
+	Factory[symbols.sFields] = fields or emptyFields
+	Factory[symbols.sName] = name
+	Factory[symbols.sComponentNumber] = do findComponentNumber
+
 	Factory.toString = ->
-		"Component #{this.componentName}: " + this.componentFields?.join ', '
+		"Component #{this.componentName}: " + this[symbols.sFields].join ', '
 
 	components.set name, Factory
 
 	Object.freeze Factory
 	return Factory
-
-Component.reservedNames = []
 
 primes = []
 findComponentNumber = ->
@@ -67,24 +72,22 @@ findComponentNumber = ->
 	return pr
 
 dispose = ->
-	return unless this.__data
-	this.__data.length = 0
-	this.componentType.__pool.push this
+	return unless data = this[sData]
+	data.length = 0
+	this[sType][sPool].push this
 
 reduceField = (fields, field) ->
 	return fields unless _.isString(field)
-	if ~reservedFields.indexOf field
-		throw TypeError "specified field #{field} is reserved word, choose another"
 	fields.push field
 	return fields
 
 createProps = (props, field, i) ->
-	props['__data'] = writable: yes
+	props[sData] = writable: yes
 	props[field] =
 		get: ->
-			return this.__data?[i]
+			return this[sData]?[i]
 		set: (val) ->
-			data = this.__data or= new Array(this.componentType.componentFields.length)
+			data = this[sData] or= new Array(this[sType][symbols.sFields].length)
 			data[i] = val
 		enumerable: yes
 	return props
