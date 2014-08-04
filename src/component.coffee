@@ -12,6 +12,8 @@ sData = Symbol 'data array for the component'
 
 emptyFields = []
 
+componentNumbers = require './component-number'
+
 module.exports = Component = (name, fields) ->
 	unless _.isString name 
 		throw new TypeError 'missing name of the component'
@@ -21,12 +23,14 @@ module.exports = Component = (name, fields) ->
 
 	if fields and not (_.isArray(fields) and (fields = fast.reduce fields, reduceField, []).length)
 		throw new TypeError 'invalid fields specified for component: '+fields
+	
+	fields or= emptyFields
 
 	# log 'component with fields %j has been defined before', fields
 
 	# Create properties based on the fields
-	props = Object.create(null)
-	fast.reduce fields, createProps, props if fields
+	props = Object.create null
+	fast.reduce fields, createProps, props if fields isnt emptyFields
 
 	proto = {}
 	proto[symbols.sDispose] = dispose
@@ -40,36 +44,16 @@ module.exports = Component = (name, fields) ->
 	proto[sType] = Factory
 
 	Factory[sPool] = [] # private pool of components
-	Factory[symbols.sFields] = fields or emptyFields
+	Factory[symbols.sFields] = fields
 	Factory[symbols.sName] = name
-	Factory[symbols.sComponentNumber] = do findComponentNumber
+	Factory[symbols.sComponentNumber] = componentNumbers[components.size]
 
-	Factory.toString = ->
-		"Component #{this.componentName}: " + this[symbols.sFields].join ', '
-
-	components.set name, Factory
-
-	Object.freeze Factory
-	return Factory
-
-primes = []
-findComponentNumber = ->
-	len = primes.length
-	pr = primes[len - 1] or 1
-	loop
-		pr += if len > 2 then 2 else 1
-		divides = false
-		i = 0
+	toString = "Component #{name}: " + fields.join ', '
+	Factory.toString = -> toString		
 	
-		# discard the number if it divides by one earlier prime.
-		while i < len
-			if (pr % primes[i]) is 0
-				divides = true
-				break
-			i++
-		break unless divides is true
-	primes.push pr
-	return pr
+	Object.freeze Factory
+	components.set name, Factory
+	return Factory
 
 dispose = ->
 	return unless data = this[sData]
