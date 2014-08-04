@@ -1,5 +1,6 @@
-{expect, sinon} = require './setup'
+{expect, createMockComponent} = require './setup'
 Entity = require '../src/entity'
+symbols = require '../src/symbols'
 
 describe 'Entity', ->
 	
@@ -22,17 +23,6 @@ describe 'Entity', ->
 		expect(Entity 1).to.equal expected
 
 	describe 'instance', ->
-
-		createMockComponent = ->
-			Component = ->
-				component = Object.create 
-					dispose: -> this.disposed = yes
-				component.componentType = Component
-				component.disposed = no
-				return component
-			Component.componentName = 'mock'
-			Object.freeze Component
-			return Component
 
 		beforeEach ->
 			@entity = do Entity
@@ -151,35 +141,34 @@ describe 'Entity', ->
 				@entity.remove @cAlpha, false
 				expect(@alpha.disposed).to.be.false
 
-		it 'responds to dispose method', ->
-			expect(@entity).to.respondTo 'dispose'
+		it 'responds to @@dispose method', ->
+			expect(@entity[symbols.sDispose]).to.be.a "function"
 
-		describe 'dispose()', ->
+		describe '@@dispose', ->
 
 			it 'should remove all contained components', ->
 				@entity.add @alpha
 				@entity.add @beta
-				@entity.dispose()
+				do @entity[symbols.sDispose]
 				expect(@entity.has @cAlpha).to.be.false
 				expect(@entity.has @cBeta).to.be.false
 
 			it 'should call dispose method of all components', ->
 				@entity.add @alpha
 				@entity.add @beta
-				debugger
-				@entity.dispose()
+				do @entity[symbols.sDispose]
 				expect(@alpha.disposed).to.be.true
 				expect(@alpha.disposed).to.be.true
 
 			it 'stored entity into the pool with no id is specified', ->
 				expected = do Entity
-				expected.dispose()
+				do expected[symbols.sDispose]
 				actual = do Entity
 				expect(actual).to.equal expected
 
 			it 'trashes entity with id specified', ->
 				expected = Entity 'trash'
-				expected.dispose()
+				do expected[symbols.sDispose]
 				actual = Entity 'trash'
 				expect(actual).to.not.equal expected
 

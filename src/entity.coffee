@@ -4,6 +4,10 @@ _ = require 'lodash'
 require 'es6-shim'
 entities = new Map
 
+symbols = require './symbols'
+{Symbol, sDispose, sType} = symbols
+sList = Symbol 'list of components in the entity'
+
 module.exports = (id) ->
 
 	if hasId = (arguments.length > 0)
@@ -17,7 +21,9 @@ module.exports = (id) ->
 	if entityPool.length
 		entity = entityPool.pop()
 	else
-		entity = Object.create Entity, '__map': value: new Map
+		entity = Object.create Entity
+		entity[sList] = new Map
+		entity[sDispose] = dispose
 
 	# Handle entity with ID
 	if hasId	
@@ -32,48 +38,48 @@ entityPool = []
 Entity =
 	add: (component) ->
 		validateComponent component
-		if this.__map.has componentType = component.componentType
-			log 'entity %s already contains component of type %s, consider using replace method if this is intended', this, componentType
-		this.__map.set componentType, component
+		if this[sList].has componentType = component[sType]
+			log 'entity %s already contains component `%s`, consider using replace method if this is intended', this, component[symbols.sName]
+		this[sList].set componentType, component
 		return this
 
 	replace: (component) ->
 		validateComponent component
-		this.__map.set component.componentType, component
+		this[sList].set component[sType], component
 		return this
 
 	has: (componentType) ->
 		validateComponentType componentType
-		return this.__map.has componentType
+		return this[sList].has componentType
 
 	get: (componentType) ->
 		validateComponentType componentType
-		return this.__map.get(componentType) or null
+		return this[sList].get(componentType) or null
 
 	remove: (componentType, dispose) ->
 		validateComponentType componentType
-		if false isnt dispose and component = this.__map.get componentType
-			component.dispose()
-		return this.__map.delete(componentType)
+		if false isnt dispose and component = this[sList].get componentType
+			disposeComponent component
+		return this[sList].delete(componentType)
 
-	dispose: ->
-		this.__map.forEach disposeComponent
-		this.__map.clear()
-		if this.id
-			entities.delete this.id
-			this.id = undefined
-		else
-			entityPool.push this
+dispose = ->
+	this[sList].forEach disposeComponent
+	this[sList].clear()
+	if this.id
+		entities.delete this.id
+		this.id = undefined
+	else
+		entityPool.push this
 
 disposeComponent = (component) ->
-	component.dispose()
+	do component[sDispose]
 
 validateComponent = (component) ->
 	unless component
 		throw new TypeError 'missing component for entity'
-	validateComponentType component.componentType
+	validateComponentType component[sType]
 
 validateComponentType = (componentType) ->
-	unless _.isObject(componentType) and componentType.hasOwnProperty('componentName')
+	unless _.isFunction(componentType) and componentType[symbols.sComponentNumber]
 		throw new TypeError 'invalid component for entity'
 	

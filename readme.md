@@ -57,7 +57,7 @@ Factory function doesn't accepts any parameters. All values have to be set expli
 
 When you are done working with the component and it's not needed anymore, you should call its `@@dispose` method. This will free up any internal resources and remove values. You should also get rid of any possible references that could hold that component.
 
-	do building[@@dispose]
+	do building[ @@dispose ]
 	building = null
 
 This approach is not needed if using components as intended. When removing component from entity, the component be disposed for you automatically.
@@ -95,7 +95,7 @@ Avoid calling `has` followed by `get`. For performance purposes use the followin
 
 And finally there is `remove` method to unchain the component from the entity. Note that by default the `dispose` method of the component will be called upon removal from entity. If you want to prevent that, simply pass the `false` value as the second argument. Use this with caution in cases when you want to transfer component to another entity.
 
-	entity.remove cBuilding # calls building.dispose()
+	entity.remove cBuilding # calls building[ @@dispose ]
 	entity.remove cBuilding, false
 
 Methods `add`, `replace` and `remove` returns entity object itself. You can use it to chain the commands if you like.
@@ -107,7 +107,7 @@ Methods `add`, `replace` and `remove` returns entity object itself. You can use 
 
 When you don't need whole entity any more, you can remove it from the game simply by calling its `dispose` method. All components within entity are disposed as well.
 
-	entity.dispose()
+	do entity[ @@dispose ]
 	entity = null # Need only if reference is held somewhere
 
 #### Multi-player entity
