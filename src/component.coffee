@@ -29,7 +29,9 @@ module.exports = Component = (name, fields) ->
 	# log 'component with fields %j has been defined before', fields
 
 	# Create properties based on the fields
-	props = Object.create null
+	props = Object.create(null)
+	props[sData] = writable: yes
+
 	fast.reduce fields, createProps, props if fields isnt emptyFields
 
 	proto = {}
@@ -66,7 +68,6 @@ reduceField = (fields, field) ->
 	return fields
 
 createProps = (props, field, i) ->
-	props[sData] = writable: yes
 	props[field] =
 		get: ->
 			return this[sData]?[i]
