@@ -20,6 +20,10 @@ The **System** is ... *TBD*
 
 The **Engine** is ... *TBD*
 
+### Symbol usage
+
+Framework is using Symbol structure as specified in EcmaScript 6. This is mainly to avoid collisions in created objects and also to hide some internal states. All public symbols all accessible from `symbols.coffee`. You can use these to get required values. Acknowledge notation exists for the symbols, it uses prefix `@@`. Anytime I am using this prefix be aware you have to use the correct symbol from mentioned file.
+
 ## How it works
 
 ### Defining the component
@@ -35,9 +39,9 @@ You can completely omit list of properties. That is useful for components called
 	cHasRoof = Component 'hasRoof'
 	cIsBulletproof = Component 'isBulletproof'
 
-Name of the component is available in the read-only property `name`.
+Factory function exposes some symbols. You might be interested in @@name to get the actual name of component.
 
-*Note that there is couple of reserved words you cannot use for property name. Namely `component` and `dispose`.*
+	cBuilding[@@name] === 'building'
 
 ### Working with components
 
@@ -51,9 +55,9 @@ Factory function doesn't accepts any parameters. All values have to be set expli
 
 *Note that components are not classes thus avoid using keyword `new` in front of factory function. It doesn't change behavior thou, it's about performance.*
 
-When you are done working with the component and it's not needed anymore, you should call its `dispose` method. This will free up any internal resources and remove values. You should also get rid of any possible references that could hold that component.
+When you are done working with the component and it's not needed anymore, you should call its `@@dispose` method. This will free up any internal resources and remove values. You should also get rid of any possible references that could hold that component.
 
-	building.dispose()
+	do building[@@dispose]
 	building = null
 
 This approach is not needed if using components as intended. When removing component from entity, the component be disposed for you automatically.
