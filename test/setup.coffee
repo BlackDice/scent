@@ -6,7 +6,7 @@ module and module.exports =
 	sinon: require 'sinon'
 
 chai.use require 'sinon-chai'
-chai.use require 'chai-as-promised'
+# chai.use require 'chai-as-promised'
 
 symbols = require '../src/symbols'
 componentNumbers = require '../src/component-number'
@@ -22,3 +22,9 @@ module.exports.createMockComponent = (name) ->
 	Component[symbols.sName] = name or 'mock'
 	Object.freeze Component
 	return Component
+
+module.exports.mockEntity = (components...) ->
+	entity = get: (componentType) ->
+		for component in components
+			return component if componentType is component[symbols.sType]
+		return null
