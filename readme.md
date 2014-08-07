@@ -18,9 +18,9 @@ The **Entity** is any game object. It is composed of components designating the 
 
 The **Node** is small subset of components owned by single entity and simplifies work of the systems.
 
-The **System** is ... *TBD*
+The **System** is place for your game logic.
 
-The **Engine** is ... *TBD*
+The **Engine** is meeting spot for all mentioned parts.
 
 ### Symbol usage
 
@@ -187,3 +187,49 @@ Node item is directly linked to entity that through `@@entity` property. You cou
 		node.building.floors += 1 # directly increase floors of cBuilding component
 		if node.foundation.material = 'steel' 
 			do node[ @@entity ][ @@dispose ] # remove the entity from the game
+
+### Need for logic
+
+Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural). There should be many systems, each responsible for some of the game mechanics.
+
+Compared to other parts of the framework, defining the system is far more complex, but you could have expected that. We were mostly handling data so far. Following is recommended way how to setup the system.
+
+	module.exports = System 'name', (engine) ->
+
+		# This is the place for initialization logic before the system
+		# is actually managed by the engine. Anything that is supposed 
+		# to stick with the system for the eternity is supposed to be here.
+
+		install = ->
+			# This method is called when the system is installed into engine.
+			# It's good spot to attach event listeners you might want to use
+
+		uninstall = ->
+			# Opposite of install, cleanup the resources that were created
+			# during installation. This is important method for systems
+			# that can be deactivated during runtime when they are not
+			# needed.
+
+		update = (timestamp, delta) ->
+			# Place for your timed logic based on fixed timestep.
+			# Update data in components that belongs to logic of this system
+
+		render = (timestamp, delta) ->
+			# Very similar to update method, but used to actually draw stuff
+			# on the user screen.
+
+		finish = ->
+			# Method called when all systems run their update loop. 
+			# It can be used to check for new nodes and entities and
+			# prepare them for the next round.
+
+		return {install, uninstall, update, render, finish}
+
+As you can see there are 5 methods supported by system. All of them are absolutely optional and if you have nothing to put in there, it's recommended to omit them. Most basic system could look like this:
+
+	module.exports = System 'basic', (engine) ->
+
+		update = (timestamp, delta) ->
+
+		return {update}
+
