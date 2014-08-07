@@ -5,7 +5,7 @@ require 'es6-shim'
 entities = new Map
 
 symbols = require './symbols'
-{Symbol, sDispose, sType} = symbols
+{Symbol, sDispose, sType, sNodes} = symbols
 sList = Symbol 'list of components in the entity'
 
 module.exports = (id) ->
@@ -22,8 +22,9 @@ module.exports = (id) ->
 		entity = entityPool.pop()
 	else
 		entity = Object.create Entity
-		entity[sList] = new Map
-		entity[sDispose] = dispose
+		entity[ sList ] = new Map
+		entity[ sDispose ] = dispose
+		entity[ sNodes ] = new Map
 
 	# Handle entity with ID
 	if hasId	
@@ -80,6 +81,6 @@ validateComponent = (component) ->
 	validateComponentType component[sType]
 
 validateComponentType = (componentType) ->
-	unless _.isFunction(componentType) and componentType[symbols.sComponentNumber]
+	unless _.isFunction(componentType) and componentType[symbols.sNumber]
 		throw new TypeError 'invalid component for entity'
 	

@@ -35,7 +35,14 @@ describe 'Entity', ->
 			entityWithId = Entity 200
 			entityWithId.id = 100
 			expect(entityWithId).to.have.ownProperty "id", 200
-		
+
+		it 'has read-only property @@nodes being the map', ->
+			expect(@entity[ symbols.sNodes ]).to.be.an.instanceof Map
+
+		it 'forbids any modification to its structure or values', ->
+			@entity.someProperty = true
+			expect(@entity.someProperty).to.not.exist
+
 		checkForComponent = (method) ->
 			expect(method).to.throw TypeError, /missing component/
 			checkForComponentType method
@@ -49,10 +56,6 @@ describe 'Entity', ->
 			toThrow 'function', -> method new Function
 			toThrow 'array', -> method []
 			toThrow 'object', -> method {}
-
-		it 'forbids any modification to its structure or values', ->
-			@entity.someProperty = true
-			expect(@entity.someProperty).to.not.exist
 
 		it 'responds to add method', ->
 			expect(@entity).to.respondTo 'add'

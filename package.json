@@ -22,6 +22,8 @@
     "lodash": "^2.4.1",
     "es6-shim": "^0.15.0",
     "fast.js": "0.0.3",
-    "es6-symbol": "^0.1.0"
+    "es6-symbol": "^0.1.0",
+    "thousandprimes": "0.0.1",
+    "lill": "0.0.2"
   }
 }

@@ -51,9 +51,9 @@ describe 'Component', ->
 
 		it 'should provide unique number of component in property @@componentNumber', ->
 			cComponent = Component 'hashed'
-			expect(cComponent[symbols.sComponentNumber]).to.be.a "Number"
+			expect(cComponent[symbols.sNumber]).to.be.a "Number"
 			cComponent2 = Component 'hashed2'
-			expect(cComponent2[symbols.sComponentNumber]).to.not.equal cComponent[symbols.componentNumber]
+			expect(cComponent2[symbols.sNumber]).to.not.equal cComponent[symbols.componentNumber]
 		
 		it 'should provide list of defined fields in @@fields', ->
 			cComponent = Component 'withfields', @fields

@@ -48,7 +48,7 @@ module.exports = Component = (name, fields) ->
 	Factory[sPool] = [] # private pool of components
 	Factory[symbols.sFields] = fields
 	Factory[symbols.sName] = name
-	Factory[symbols.sComponentNumber] = componentNumbers[components.size]
+	Factory[symbols.sNumber] = componentNumbers[components.size]
 
 	toString = "Component #{name}: " + fields.join ', '
 	Factory.toString = -> toString		

@@ -14,7 +14,7 @@ The **Component** is smallest part the design. It is data storage unit that is m
 
 The **Entity** is any game object. It is composed of components designating the purpose of entity that way.
 
-The **Node** is small portion of the entity 
+The **Node** is small subset of components owned by single entity and simplifies work of the systems.
 
 The **System** is ... *TBD*
 
@@ -120,7 +120,7 @@ As stated in the introduction, framework is made for use in multi-player game en
 
 ID can be number or string, it's not constrained at all. Calling `Entity` with the same ID will return seamlessly the same entity.
 
-*Note that this kind of entity is not pooled so avoid disposing and creating them too much.* 
+*Note that this kind of entity is not pooled so avoid disposing and creating them again too much.* 
 
 ### Need for logic
 
@@ -136,49 +136,49 @@ Similarly to components, node has to be defined first too. You have to designate
 
 	nStructure = Node [cBuilding, cFoundation]
 
-Similarly to components, `nStructure` variable represents node type, but it's not a function you can call. This is different to components as node items are created internally. Also note that if you are requesting node type with same set of components (order doesn't matter), the previously defined node type will be returned. It should be quite fast operation, so don't hesitate to use it if you don't want to store node types all over the places.
+Similarly to components, `nStructure` variable represents node type, but it's not a function you can call. This is different to components as node items are created internally. Also note that if you are requesting node type with same set of components (order doesn't matter), the previously defined node type will be returned. It is generally quite fast operation, so don't hesitate to use it if you don't want to store node types all over the places.
 
 #### Node and entities
 
 There are two methods on the node type object which can be used to notify about entity creation, update or removal. Note that when you register node type to the engine, you don't need to worry about these (more on that later).
 
 	nStructure.addEntity entity
-	nStructure.updateEntity entity # should be called when components for entity changes
+	nStructure.updateEntity entity
 	nStructure.removeEntity entity
 
-There is no output from these methods. In case that entity fulfills the requirements, node item will be created and added to the internal list.
+These methods just returns node type object back so you can use it to chain the commands. For a new entity you should call `addEntity` method that adds only entities that fulfills the requirements. When you change some of the components in the entity, the `updateEntity` should be called. This method is clever and if entity is not yet in the node type, it will add it. Also in case that entity no longer fulfills requirements, it will be removed.
 
 ### Accessing nodes
 
-For performance reasons the internal node list is made using linked list structure. You have direct access to the first and last node items only. Be aware that if the list is empty, these properties will be `null`. In case of single item in the list, these two are equal.
+Returned node type object also serves as object to access list of created nodes. For performance reasons it uses linked list ([LiLL implementation](https://www.npmjs.org/package/lill). You have direct access to the first and last node items only. Be aware that if the list is empty, these properties will be `null`. In case of single item in the list, these two are equal.
 
 	nStructure.head # first node in the list
 	nStructure.tail # last node in the list
 
-Each node item has got `@@next` and `@@prev` properties pointing to its neighbors in the list. This can be used to iterate over the list. Note that these properties are ``null` in case they would be pointing to itself. Eg. one node has no *next*, first node in two item list has no *prev*, etc... This allows for very easy looping mechanism.
+Each node item has got `@@next` and `@@prev` properties pointing to its neighbors in the list. This can be used to iterate over the list. Note that these properties are `null` in case they would be pointing to itself. Eg. one node has no *next*, first node in two item list has no *prev*, etc... This allows for very easy looping mechanism.
 
-	while (node = nStructure.head)
+	node = nStructure.head
+	while (node)
 		# Do something with the node
 		node = node[ @@next ]
 
-To keep this DRY and simple, there is also convenience method called `each` that simplifies looping for you. It's especially handy to separate looping logic into named function easily. That can be useful when running loops repeatedly (you will do that most of the time).
+To keep this DRY and simple, there is also convenience method called `each` that simplifies looping for you. It's especially handy to separate looping logic into named function easily. That can be useful when running loops repeatedly (you will do that most of the time). Another added value that it counts nodes for you if you that information for something.
 
-	loopNodes = (node) ->
+	loopNodes = (node, i) ->
 		# Do something with the node
 		# You can access @@next and @@prev here too if needed
 
-		# If you want to stop the loop for some reason...
-		return false
-
 	nStructure.each loopNodes
 
-#### Data in the node
+Node item also exposes its parent node list through property @@type. That can be can useful if you need access to `tail` and `head` properties or possibly call any of the methods to add/update/remove entity to immediately create appropriate node items. I discourage doing so unless you are using own engine implementation working differently.
 
-Having node item gives you direct access to requested components and also to the entire entity in case you want to work with that somehow. Names of components are used here to define property name for easy access.
+#### Node components
+
+Having node item gives you direct access to requested components and also to the entire entity in case you want to work with that somehow. Names of components are used here to define property names for easy access.
 
 	loopNodes = (node) ->
 		node.building.floors += 1 # directly increase floors of cBuilding component
 		if node.foundation.material = 'steel' 
 			do node[ @@entity ][ @@dispose ] # remove the entity from the game
 
-Of course you can still access components out of the defined set directly through `@@entity` property and its `get` method, but it's not recommended and you should only access components you are expecting to be in there. However you can use `@@entity` to add or remove component from it when appropriate.
+Of course you can still access components out of the defined set directly through `@@entity` property and its `get` method, but it's not recommended and you should only access components you are expecting to be in there. You can use `@@entity` property to add or remove component from it when appropriate.
