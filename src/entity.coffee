@@ -1,86 +1,92 @@
+'use strict'
+
 log = (require 'debug') 'scent:entity'
 _ = require 'lodash'
 
-require 'es6-shim'
-entities = new Map
+{Symbol, Map} = require './es6-support'
 
 symbols = require './symbols'
-{Symbol, sDispose, sType, sNodes} = symbols
-sList = Symbol 'list of components in the entity'
+{bDispose, bType, bNodes} = symbols
+bList = Symbol 'map of components in the entity'
 
-module.exports = (id) ->
+entityPool = {}
+Lill = require 'lill'
+Lill.attach entityPool
 
-	if hasId = (arguments.length > 0)
-		unless _.isString(id) or _.isNumber(id) 
-			throw new TypeError 'invalid id for entity, expected string or number'
+Entity = (components) ->
 
-	# Return existing entity
-	return entity if hasId and entity = entities.get id
+	if components and not _.isArray components
+		throw new TypeError 'expected array of components for entity'
 
-	# Fetch entity from the pool or create fresh one
-	if entityPool.length
-		entity = entityPool.pop()
+	if entity = Lill.getTail entityPool
+		Lill.remove entityPool, entity
 	else
-		entity = Object.create Entity
-		entity[ sList ] = new Map
-		entity[ sDispose ] = dispose
-		entity[ sNodes ] = new Map
+		entity = Object.create entityPrototype, entityProps
+		entity[ bList ] = new Map
+		entity[ bDispose ] = Entity.disposed
 
-	# Handle entity with ID
-	if hasId	
-		Object.defineProperty entity, 'id', {enumerable: yes, get: -> id}
-		entities.set id, entity
+	# Add components passed in constructor
+	components and components.forEach entity.add, entity
 
-	Object.freeze entity
 	return entity
 
-entityPool = []
+entityProps = 'size': get: -> return this[ bList ].size
 
-Entity =
+entityPrototype =
 	add: (component) ->
 		validateComponent component
-		if this[sList].has componentType = component[sType]
-			log 'entity %s already contains component `%s`, consider using replace method if this is intended', this, component[symbols.sName]
-		this[sList].set componentType, component
+		if this[ bList ].has componentType = component[ bType ]
+			log 'entity already contains component `%s`, consider using replace method if this is intended', component[ symbols.bName ]
+		Entity.componentAdded.call this, component
 		return this
 
 	replace: (component) ->
 		validateComponent component
-		this[sList].set component[sType], component
+		Entity.componentAdded.call this, component
 		return this
 
 	has: (componentType) ->
 		validateComponentType componentType
-		return this[sList].has componentType
+		return this[ bList ].has componentType
 
 	get: (componentType) ->
 		validateComponentType componentType
-		return this[sList].get(componentType) or null
+		return this[ bList ].get(componentType) or null
 
 	remove: (componentType, dispose) ->
 		validateComponentType componentType
-		if false isnt dispose and component = this[sList].get componentType
+		if false isnt dispose and component = this[ bList ].get componentType
 			disposeComponent component
-		return this[sList].delete(componentType)
+		Entity.componentRemoved.call this, componentType
 
-dispose = ->
-	this[sList].forEach disposeComponent
-	this[sList].clear()
-	if this.id
-		entities.delete this.id
-		this.id = undefined
-	else
-		entityPool.push this
+NoMe = require 'nome'
+
+Entity.componentAdded = NoMe (component) ->
+	this[ bList ].set component[ bType ], component
+	return this
+
+Entity.componentRemoved = NoMe (componentType) ->
+	this[ bList ].delete componentType
+	return this
+
+Entity.disposed = NoMe ->
+	this[ bList ].forEach disposeComponent
+	this[ bList ].clear()
+	Lill.add entityPool, this
+	return this
 
 disposeComponent = (component) ->
-	do component[sDispose]
+	do component[ bDispose ]
 
 validateComponent = (component) ->
 	unless component
 		throw new TypeError 'missing component for entity'
-	validateComponentType component[sType]
+	validateComponentType component[ bType ]
 
 validateComponentType = (componentType) ->
-	unless _.isFunction(componentType) and componentType[symbols.sNumber]
+	unless _.isFunction(componentType) and componentType[ symbols.bNumber ]
 		throw new TypeError 'invalid component for entity'
-	
+
+Object.freeze Entity
+Object.freeze entityPrototype
+module.exports = Entity

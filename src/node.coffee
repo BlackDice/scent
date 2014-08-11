@@ -4,18 +4,16 @@ log = (require 'debug') 'scent:node'
 _  = require 'lodash'
 fast = require 'fast.js'
 
-require 'es6-shim'
-nodeListsByHash = new Map
+{Symbol, Map} = require './es6-support'
 
 Lill = require 'lill'
 
 symbols = require './symbols'
-{Symbol, sDispose, sType} = symbols
-{sNext, sPrev} = symbols
-sList = Symbol 'list of components required by node'
-sPool = Symbol 'pool of disposed nodes ready to use'
+{bDispose, bType} = symbols
+bList = Symbol 'list of components required by node'
+bPool = Symbol 'pool of disposed nodes ready to use'
 
-module.exports = Node = (componentTypes) ->
+module.exports = Node = (componentTypes, storageMap) ->
 
 	# Wrap the value into array if none passed
 	componentTypes = [componentTypes] unless _.isArray componentTypes
@@ -26,42 +24,45 @@ module.exports = Node = (componentTypes) ->
 	unless componentTypes.length
 		throw new TypeError 'require at least one component for node'
 
+	if storageMap and not validateStorageMap storageMap
+		throw new TypeError 'valid storage map expected in second argument'
+
 	# Calculate hash based on prime numbers
 	hash = fast.reduce componentTypes, hashComponent, 1
 
 	# Return existing node list
-	return nodeList if nodeList = nodeListsByHash.get hash
+	return nodeList if storageMap and nodeList = storageMap.get hash
 	
 	# Create actual node list
 	nodeList = Object.create NodeList, NodeListProps
-	nodeList[ sList ] = componentTypes
-	nodeList[ sPool ] = []
+	nodeList[ bList ] = componentTypes
+	nodeList[ bPool ] = []
 
 	Lill.attach nodeList
 
-	nodeListsByHash.set hash, nodeList
+	storageMap.set hash, nodeList if storageMap
 	Object.freeze nodeList
 	return nodeList
 
 NodeList =
 	addEntity: ->
 		entity = validateEntity arguments[0]
-		map = entity[ symbols.sNodes ]
+		map = entity[ symbols.bNodes ]
 
 		return this if map.has this
 
-		if (pool = this[ sPool ]).length
+		if (pool = this[ bPool ]).length
 			nodeItem = pool.pop()
 		else
 			nodeItem = Object.create null
-			nodeItem[ sType ] = this
+			nodeItem[ bType ] = this
 
-		for componentType in this[ sList ]
+		for componentType in this[ bList ]
 			return this unless component = entity.get componentType
-			nodeItem[componentType[ symbols.sName ]] = component
+			nodeItem[componentType[ symbols.bName ]] = component
 
 		# Store entity within node item
-		nodeItem[ symbols.sEntity ] = entity
+		nodeItem[ symbols.bEntity ] = entity
 
 		# Store node item references
 		map.set this, nodeItem
@@ -71,25 +72,25 @@ NodeList =
 
 	updateEntity: ->
 		entity = validateEntity arguments[0]
-		map = entity[ symbols.sNodes ]
+		map = entity[ symbols.bNodes ]
 
 		return this.addEntity entity unless nodeItem = map.get this
 
-		for componentType in this[ sList ]
+		for componentType in this[ bList ]
 			unless component = entity.get componentType
 				return this.removeEntity entity
-			nodeItem[componentType[ symbols.sName ]] = component
+			nodeItem[componentType[ symbols.bName ]] = component
 
 		return this
 
 	removeEntity: ->
 		entity = validateEntity arguments[0]
-		map = entity[ symbols.sNodes ]
+		map = entity[ symbols.bNodes ]
 		if nodeItem = map.get this
 			Lill.remove this, nodeItem
 			map.delete this
-			nodeItem[ symbols.sEntity ] = null
-			this[ sPool ].push nodeItem
+			nodeItem[ symbols.bEntity ] = null
+			this[ bPool ].push nodeItem
 
 		return this
 
@@ -109,7 +110,7 @@ NodeListProps['size'] =
 	get: -> Lill.getSize this	
 
 hashComponent = (result, componentType) ->
-	result *= componentType[ symbols.sNumber ]
+	result *= componentType[ symbols.bNumber ]
 
 validateEntity = (entity) ->
 	unless entity and _.isFunction(entity.get)
@@ -118,6 +119,11 @@ validateEntity = (entity) ->
 
 validateComponentType = (componentType) ->
 	return false unless componentType
-	unless _.isFunction(componentType) and componentType[ symbols.sNumber ]
+	unless _.isFunction(componentType) and componentType[ symbols.bNumber ]
 		throw new TypeError 'invalid component for node'
 	return true
+
+validateStorageMap = (storageMap) ->
+	return false unless storageMap
+	return true if storageMap instanceof Map
+	return _.isFunction(storageMap.get) and _.isFunction(storageMap.set)

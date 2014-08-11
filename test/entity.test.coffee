@@ -1,6 +1,8 @@
-{expect, createMockComponent} = require './setup'
+{expect, sinon, createMockComponent} = require './setup'
 Entity = require '../src/entity'
 symbols = require '../src/symbols'
+
+NoMe = require 'nome'
 
 describe 'Entity', ->
 	
@@ -10,17 +12,27 @@ describe 'Entity', ->
 	it 'being called returns in instance of entity', ->
 		expect(do Entity).to.be.an "object"
 
-	it 'expects string or number or nothing at first argument', ->
+	it 'expects optional array of components at first argument', ->
 		toThrow = (msg, fn) -> 
-			expect(fn).to.throw TypeError, /invalid id/, msg
+			expect(fn).to.throw TypeError, /expected array of components/, msg
+		toThrow 'string', -> Entity 'str'
+		toThrow 'number', -> Entity 1
 		toThrow 'bool', -> Entity true
-		toThrow 'array', -> Entity []
 		toThrow 'object', -> Entity {}
 		toThrow 'function', -> Entity new Function
 
-	it 'returns same value for the identical first argument', ->
-		expected = Entity(1)
-		expect(Entity 1).to.equal expected
+	it 'returns new entity instance on every call', ->
+		expected = Entity()
+		expect(Entity()).to.not.equal expected
+
+	it 'exports `disposed` notifier', ->
+		expect(NoMe.is(Entity.disposed)).to.be.true
+
+	it 'exports `componentAdded` notifier', ->
+		expect(NoMe.is(Entity.componentAdded)).to.be.true
+
+	it 'exports `componentRemoved` notifier', ->
+		expect(NoMe.is(Entity.componentRemoved)).to.be.true
 
 	describe 'instance', ->
 
@@ -30,18 +42,6 @@ describe 'Entity', ->
 			@cBeta = createMockComponent()
 			@alpha = do @cAlpha
 			@beta = do @cBeta
-
-		it 'has read-only id property when first argument passed in', ->
-			entityWithId = Entity 200
-			entityWithId.id = 100
-			expect(entityWithId).to.have.ownProperty "id", 200
-
-		it 'has read-only property @@nodes being the map', ->
-			expect(@entity[ symbols.sNodes ]).to.be.an.instanceof Map
-
-		it 'forbids any modification to its structure or values', ->
-			@entity.someProperty = true
-			expect(@entity.someProperty).to.not.exist
 
 		checkForComponent = (method) ->
 			expect(method).to.throw TypeError, /missing component/
@@ -68,6 +68,12 @@ describe 'Entity', ->
 			it 'should return entity itself', ->
 				expect(@entity.add @alpha).to.equal @entity
 
+			it 'calls notifier componentAdded', ->
+				rem = Entity.componentAdded[ NoMe.bNotify ] spy = sinon.spy()
+				@entity.add @alpha
+				expect(spy).to.have.been.calledOn(@entity).calledWith(@alpha).calledOnce
+				Entity.componentAdded[ NoMe.bDenotify ] rem
+
 		it 'responds to replace method', ->
 			expect(@entity).to.respondTo 'replace'
 
@@ -85,6 +91,12 @@ describe 'Entity', ->
 				@entity.replace newAlpha
 				expect(@entity.get @cAlpha).to.equal newAlpha
 				expect(@entity.has @cAlpha).to.be.true
+
+			it 'calls notifier componentAdded', ->
+				rem = Entity.componentAdded[ NoMe.bNotify ] spy = sinon.spy()
+				@entity.replace @alpha
+				expect(spy).to.have.been.calledOn(@entity).calledWith(@alpha).calledOnce
+				Entity.componentAdded[ NoMe.bDenotify ] rem
 
 		it 'responds to has method', ->
 			expect(@entity).to.respondTo 'has'
@@ -144,36 +156,57 @@ describe 'Entity', ->
 				@entity.remove @cAlpha, false
 				expect(@alpha.disposed).to.be.false
 
+			it 'calls notifier componentRemoved', ->
+				@entity.add @alpha
+				rem = Entity.componentRemoved[ NoMe.bNotify ] spy = sinon.spy()
+				@entity.remove @cAlpha
+				expect(spy).to.have.been.calledOn(@entity).calledWith(@cAlpha).calledOnce
+				Entity.componentRemoved[ NoMe.bDenotify ] rem
+
 		it 'responds to @@dispose method', ->
-			expect(@entity[symbols.sDispose]).to.be.a "function"
+			expect(@entity[symbols.bDispose]).to.be.a "function"
 
 		describe '@@dispose', ->
 
 			it 'should remove all contained components', ->
 				@entity.add @alpha
 				@entity.add @beta
-				do @entity[symbols.sDispose]
+				do @entity[ symbols.bDispose ]
 				expect(@entity.has @cAlpha).to.be.false
 				expect(@entity.has @cBeta).to.be.false
 
 			it 'should call dispose method of all components', ->
 				@entity.add @alpha
 				@entity.add @beta
-				do @entity[symbols.sDispose]
+				do @entity[ symbols.bDispose ]
 				expect(@alpha.disposed).to.be.true
 				expect(@alpha.disposed).to.be.true
 
-			it 'stored entity into the pool with no id is specified', ->
+			it 'store entity into the pool for later retrieval', ->
 				expected = do Entity
-				do expected[symbols.sDispose]
+				do expected[ symbols.bDispose ]
 				actual = do Entity
 				expect(actual).to.equal expected
 
-			it 'trashes entity with id specified', ->
-				expected = Entity 'trash'
-				do expected[symbols.sDispose]
-				actual = Entity 'trash'
-				expect(actual).to.not.equal expected
+			it 'calls notifier for disposal of entity', ->
+				rem = Entity.disposed[ NoMe.bNotify ] spy = sinon.spy()
+				do @entity[ symbols.bDispose ]
+				expect(spy).to.have.been.calledOn(@entity).calledOnce
+				Entity.disposed[ NoMe.bDenotify ] rem
+
+		it 'adds components passed in constructor array', ->
+			entity = Entity [@alpha, @beta, @beta]
+			expect(entity.has @cAlpha).to.be.true
+			expect(entity.has @cBeta).to.be.true
+
+		it 'has size property containing number of components in entity', ->
+			expect(@entity).to.have.property "size", 0
+			@entity.add @alpha
+			expect(@entity).to.have.property "size", 1
+			@entity.add @beta
+			expect(@entity).to.have.property "size", 2
+			@entity.remove @cAlpha
+			expect(@entity).to.have.property "size", 1
 
 		it 'works as expected', ->
 			@entity.add @alpha

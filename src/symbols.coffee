@@ -1,14 +1,15 @@
 'use strict'
 
-exports.Symbol = Symbol = require 'es6-symbol'
+{Symbol} = require './es6-support'
 
-exports.sName = Symbol 'various names for the objects'
-exports.sType = Symbol 'contains type of the object'
-exports.sNumber = Symbol 'numeric identifier of the object'
+exports.bName = Symbol 'various names for the objects'
+exports.bType = Symbol 'contains type of the object'
+exports.bNumber = Symbol 'numeric identifier of the object'
+exports.bFields = Symbol 'fields defined for the component'
 
-exports.sDispose = Symbol 'method name for disposing objects'
+exports.bDispose = Symbol 'method name for disposing objects'
 
-exports.sEntity = Symbol 'represent entity reference on the object'
-exports.sNext = Symbol 'next item in the list'
-exports.sPrev = Symbol 'previous item in the list'
-exports.sNodes = Symbol 'nodes that owns current entity'
+exports.bEntity = Symbol 'represent entity reference on the object'
+exports.bNodes = Symbol 'nodes that owns current entity'
+
+exports.Symbol = Symbol

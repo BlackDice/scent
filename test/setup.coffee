@@ -14,12 +14,12 @@ called = 0
 module.exports.createMockComponent = (name) ->
 	Component = ->
 		component = Object.create(null) 
-		component[ symbols.sDispose ] = -> this.disposed = yes
-		component[ symbols.sType ] = Component
+		component[ symbols.bDispose ] = -> this.disposed = yes
+		component[ symbols.bType ] = Component
 		component.disposed = no
 		return component
-	Component[ symbols.sNumber ] = componentNumbers[called++]
-	Component[ symbols.sName ] = name or 'mock'
+	Component[ symbols.bNumber ] = componentNumbers[called++]
+	Component[ symbols.bName ] = name or 'mock'
 	Object.freeze Component
 	return Component
 
@@ -27,10 +27,10 @@ module.exports.mockEntity = (components...) ->
 	entity = 
 		get: (componentType) ->
 			for component in components
-				return component if componentType is component[ symbols.sType ]
+				return component if componentType is component[ symbols.bType ]
 			return null
 		add: (component) ->
-			componentType = component[ symbols.sType ]
+			componentType = component[ symbols.bType ]
 			oldComponent = this.get componentType
 			if oldComponent and ~(idx = (components.indexOf oldComponent))
 				components[idx] = component
@@ -41,5 +41,5 @@ module.exports.mockEntity = (components...) ->
 				components.splice idx, 1
 			return this
 
-	entity[ symbols.sNodes ] = new Map
+	entity[ symbols.bNodes ] = new Map
 	return entity

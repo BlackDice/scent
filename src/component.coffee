@@ -2,11 +2,11 @@ log = (require 'debug') 'scent:component'
 _ = require 'lodash'
 fast = require 'fast.js'
 
-require 'es6-shim'
+{Symbol, Map} = require './es6-support'
 components = new Map
 
 symbols = require './symbols'
-{Symbol, sType} = symbols
+{bType} = symbols
 sPool = Symbol 'pool of disposed components'
 sData = Symbol 'data array for the component'
 
@@ -21,7 +21,7 @@ module.exports = Component = (name, fields) ->
 	# Return existing factory by the name
 	return Factory if Factory = components.get name
 
-	if fields and not (_.isArray(fields) and (fields = fast.reduce fields, reduceField, []).length)
+	if fields and not (_.isArray(fields) and (fields = fast.reduce _.uniq(fields), reduceField, []).length)
 		throw new TypeError 'invalid fields specified for component: '+fields
 	
 	fields or= emptyFields
@@ -35,7 +35,7 @@ module.exports = Component = (name, fields) ->
 	fast.reduce fields, createProps, props if fields isnt emptyFields
 
 	proto = {}
-	proto[symbols.sDispose] = dispose
+	proto[symbols.bDispose] = dispose
 
 	Factory = ->
 		return pool.pop() if (pool = Factory[sPool]).length
@@ -43,12 +43,12 @@ module.exports = Component = (name, fields) ->
 		Object.seal component
 		return component
 
-	proto[sType] = Factory
+	proto[bType] = Factory
 
 	Factory[sPool] = [] # private pool of components
-	Factory[symbols.sFields] = fields
-	Factory[symbols.sName] = name
-	Factory[symbols.sNumber] = componentNumbers[components.size]
+	Factory[symbols.bFields] = fields
+	Factory[symbols.bName] = name
+	Factory[symbols.bNumber] = componentNumbers[components.size]
 
 	toString = "Component #{name}: " + fields.join ', '
 	Factory.toString = -> toString		
@@ -60,7 +60,7 @@ module.exports = Component = (name, fields) ->
 dispose = ->
 	return unless data = this[sData]
 	data.length = 0
-	this[sType][sPool].push this
+	this[bType][sPool].push this
 
 reduceField = (fields, field) ->
 	return fields unless _.isString(field)
@@ -72,7 +72,7 @@ createProps = (props, field, i) ->
 		get: ->
 			return this[sData]?[i]
 		set: (val) ->
-			data = this[sData] or= new Array(this[sType][symbols.sFields].length)
+			data = this[sData] or= new Array(this[bType][symbols.bFields].length)
 			data[i] = val
 		enumerable: yes
 	return props

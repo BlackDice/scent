@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git@git.mrammor.com:library/scent.git"
   },
-  "license": "BlackDice",
+  "license": "MIT",
   "scripts": {
     "test": "mocha -R spec"
   },
@@ -24,6 +24,7 @@
     "fast.js": "0.0.3",
     "es6-symbol": "^0.1.0",
     "thousandprimes": "0.0.1",
-    "lill": "0.0.2"
+    "lill": "0.0.3",
+    "nome": "0.0.3"
   }
 }

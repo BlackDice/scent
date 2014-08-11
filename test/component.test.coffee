@@ -7,7 +7,7 @@ describe 'Component', ->
 	it 'should be a function', ->
 		expect(Component).to.be.a "function"
 
-	it 'expects name of component for the first argument', ->
+	it 'expects name of component in the first argument', ->
 		toThrow = (msg, fn) -> 
 			expect(fn).to.throw TypeError, /missing name/, msg
 		toThrow 'void', Component
@@ -21,7 +21,7 @@ describe 'Component', ->
 		expected = Component 'name'
 		expect(Component 'name').to.equal expected
 
-	it 'optionally expects array of string passed in second argument', ->
+	it 'optionally expects array of strings passed in second argument', ->
 		toThrow = (msg, fn) -> 
 			expect(fn).to.throw TypeError, /invalid fields/, msg
 		toThrow 'number', -> Component 'number', 1
@@ -32,13 +32,13 @@ describe 'Component', ->
 		toThrow 'bool array', -> Component 'bool array', [true]
 		toThrow 'object', -> Component 'object', {}
 
-	it 'should return a factory function used to create component', ->
+	it 'should return a component type function', ->
 		expect(Component 'factory').to.be.a "function"
 
 	beforeEach ->
 		@fields = ['test1', 'test2', 'test3']
 
-	describe 'factory', ->
+	describe 'type', ->
 
 		it 'should forbid to add custom properties to itself', ->
 			cComponent = Component 'forbid'
@@ -47,17 +47,25 @@ describe 'Component', ->
 
 		it 'should provide name of component in @@name', ->
 			cComponent = Component name = 'withname'
-			expect(cComponent[symbols.sName]).to.equal name
+			expect(cComponent[symbols.bName]).to.equal name
 
-		it 'should provide unique number of component in property @@componentNumber', ->
+		it 'should provide unique number of component in property @@number', ->
 			cComponent = Component 'hashed'
-			expect(cComponent[symbols.sNumber]).to.be.a "Number"
+			expect(cComponent[ symbols.bNumber ]).to.be.a "Number"
 			cComponent2 = Component 'hashed2'
-			expect(cComponent2[symbols.sNumber]).to.not.equal cComponent[symbols.componentNumber]
+			expect(cComponent2[ symbols.bNumber ]).to.not.equal cComponent[symbols.bNumber]
 		
 		it 'should provide list of defined fields in @@fields', ->
 			cComponent = Component 'withfields', @fields
-			expect(cComponent[symbols.sFields]).to.eql @fields
+			expect(cComponent[ symbols.bFields ]).to.eql @fields
+
+		it 'should filter out duplicate fields', ->
+			cComponent = Component 'duplicates', ['dupe', 'dupe']
+			expect(cComponent[ symbols.bFields ]).to.eql ['dupe']
+
+		it 'should filter out non-string fields', ->
+			cComponent = Component 'mess', ['good', 1, true, {}]
+			expect(cComponent[ symbols.bFields ]).to.eql ['good']
 
 		it 'should expose list of defined properties when calling toString()', ->
 			cComponent = Component 'toString', @fields
@@ -78,7 +86,7 @@ describe 'Component', ->
 			@component = do @cComponent
 
 		it 'should have a factory function stored in @@type', ->
-			expect(@component[symbols.sType]).to.eql @cComponent
+			expect(@component[symbols.bType]).to.eql @cComponent
 
 		it 'should have properties defined by fields argument', ->
 			for field in @fields
@@ -96,22 +104,22 @@ describe 'Component', ->
 		describe '@@dispose', ->
 
 			it 'should be a function', ->
-				expect(@component[symbols.sDispose]).to.be.an "function"
+				expect(@component[symbols.bDispose]).to.be.an "function"
 
 			it 'should destroy component completely if no data were set', ->
-				do @component[symbols.sDispose]
+				do @component[symbols.bDispose]
 				newComponent = do @cComponent
 				expect(newComponent).to.not.equal @component
 
 			it 'should unset all data of the component', ->
 				@component.test1 = 'a'
 				@component.test3 = 'b'
-				do @component[symbols.sDispose]
+				do @component[symbols.bDispose]
 				expect(@component.test1).to.not.be.ok
 				expect(@component.test3).to.not.be.ok
 
 			it 'should keep disposed component for next use', ->
 				@component.test2 = 'foo'
-				do @component[symbols.sDispose]
+				do @component[symbols.bDispose]
 				actual = do @cComponent
 				expect(actual).to.equal @component
