@@ -2,29 +2,31 @@
 
 *Make a great game with fresh scent. It smells really good !*
 
-Scent is framework heavily based on the [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters. Thanks to the environments like NodeJS, you can use Scent on the game server too and even share most of code.
+Scent is framework heavily based on the [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters. Thanks to the environments like NodeJS, you can use Scent on the game server too and share most of code.
 
 Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all of its properties in one big messy object. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
 
-Please note that this is far from complete solution of "how to make the game". This is only small piece of the whole cake that needs to be used in much more robust environment to handle game requirements. However it is something that most of games have in common no matter of genre.
+## Disclaimer
+
+Please note that this is far from complete solution of *how to make the game*. This is only small piece of the whole cake that needs to be used in much more robust environment to handle all game requirements. Possibly it is something that most of games have in common no matter of genre.
 
 ## Terminology
 
-Overview of the terms used in the framework.
+Overview of the parts of the framework.
 
-The **Component** is smallest part the design. It is data storage unit that is meant to be added to or removed from the entity.
+ * The **Component** is smallest part the design. It is data storage unit that is meant to be added to or removed from the entity.
 
-The **Entity** is any game object. It is composed of components designating the purpose of entity that way.
+ * The **Entity** is any game object. It is composed of components designating the purpose of entity that way.
 
-The **Node** is small subset of components owned by single entity and simplifies work of the systems.
+ * The **Node** is small subset of components owned by single entity and simplifies work of the systems.
 
-The **System** is small processor of data contained in components.
+ * The **System** is small processor of data contained in components.
 
-The **Engine** is meeting place for all mentioned parts.
+ * The **Engine** is meeting place for all mentioned parts.
 
 ### Type prefix
 
-There is notation for variables holding known types defined by this framework. Actual variable name is prefixed by single letter denoting the type. First letter of the original variable should be uppercased. I recommend using this notation while the framework to make clear idea of what kind variable is that.
+There is notation for variables holding known types defined by this framework. Actual variable name is prefixed by single letter denoting the type. First letter of the original variable should be uppercased. We recommend using this notation while using the framework to make clear idea of what is the variable holding.
 
 	cWeapon      component type
 	eCharacter   entity instance
@@ -32,15 +34,19 @@ There is notation for variables holding known types defined by this framework. A
 	sInput       system initializer
 	bName        symbol reference
 
+### No classes
+
+Scent is completely class-less framework. There is no inheritance of any framework part as it's not needed. **Do not use** `new` keyword when using the framework functions. It will not change it's behavior in any way, but internally you will be creating object that is thrown away. For performance reasons there are no checks if you have used `new` keyword.
+
 ### EcmaScript 6 support
 
-Framework is using some of the features as defined by EcmaScript6 draft. Since the implementation in current environments as far from finished, framework is using shims. All used features are exported in `es6-support` file to easily allow replacement by another implementation.
+Framework is using some of the features as defined by EcmaScript6 draft. Since the implementation in current environments are not really production ready, framework is using shims. All used features are exported in `es6-support` file to easily allow replacement by another implementation.
 
 #### Symbol usage
 
 To avoid collisions in some variable names and also to store truly private states, framework is using Symbol structure. All public symbols are accessible from `symbols.coffee` file. You can use these to get required values.
 
-Acknowledged notation exists for the symbols, it uses `@@` as prefix. Anytime when I am using this prefix be aware you have to use the symbol of that name from mentioned file. Note that variable names in the files are conforming to the mentioned notations too.
+Acknowledged notation exists for the symbols, it uses `@@` as prefix. Anytime when we are using this prefix be aware you have to use the symbol of that name from mentioned file. Note that variable names in the files are conforming to the mentioned notations too.
 
 ## How it works
 
@@ -230,11 +236,11 @@ System is piece of code that is able to work with data. System can be really sim
 
 #### Defining the system
 
-System alone is just empty shell waiting to be filled with code that ideally do its work on components through node types.
+System alone is just empty shell waiting to be filled with code that does its work on components through node types. System is required to have name which purpose as for now is mainly for easier debugging. It's only checked for duplicity.
 
 	sWorker = System 'worker', ->
 
-Resulting variable `sWorker` is equal to the passed function from the second argument. Additionally it stores the system name in `@@name` variable. Basically you don't need this, but it exists here for your convenience. Let's mark the returned function as **system initializer**. It's role is simply to initialize system logic upon invocation. Basically you could have system like the following code.
+Resulting variable `sWorker` is equal to the passed function from the second argument. Additionally it stores the system name in `@@name` variable. Lets mark the returned function as **system initializer**. It's role is simply to initialize system logic upon invocation. Basically you could have system like the following code.
 
 	System 'worker', ->
 
@@ -245,9 +251,9 @@ Resulting variable `sWorker` is equal to the passed function from the second arg
 	loopNode = (node) ->
 		# Worker can "build" the structure by adding more components to entity
 
-There are some issues with this. For starters you would be getting only local node type. It would not know anything about entities you have made in some other systems. You would need to find a way how to pass around the memory map for node types. Also it would be nice to make your updates based on time without too much hassle.
+This is completely viable approach, but it presents itself with some challenges. For starters you would be getting only local node type without memory map passed along. You would have to watch for entities added or changed by other systems. You can have just single system of course and do everything in it, but in that case Scent is not for you.
 
-Luckily there is nice and shiny solution to all this. It's time to meet the **engine**.
+Lets do it other way for once. It's time to meet the **engine**.
 
 ### Engine
 
@@ -261,28 +267,38 @@ The most simplest way to create engine instance is like this. This will provide 
 
 Note that engine instance is frozen (with `Object.freeze`) thus you cannot do any changes to it. This is simply security policy. Later you will learn how to actually extend it in very easy way.
 
+#### Update cycle
+
+Usually you want your systems to their work in some kind of timed fashion. How you actually setup your timing mechanism is entirely up to you. Engine only provides `update` method that loops through update handles registered by your systems.
+
+	engine.update timestamp
+
+You can pass any arguments you like in there. Those will be simply handed over to update handlers. How to actually register update handler will be explained later.
+
 #### Access to nodes
 
 Engine handles memory map of node types for you. All node types you access through the engine are remembered and you can access them from any system.
 
-	nStructure = engine.node [cBuilding, cFoundation]
+	nStructure = engine.getNode [cBuilding, cFoundation]
 
 #### Entity management
 
 Engine keeps the list of all entities for you. It also automatically informs created node types about these. All you need to do is call method `addEntity`.
 
-	building = do cBuilding
+	eCorporateBuilding = engine.addEntity [
+		building = do cBuilding
+		foundation = do cFoundation
+	]
 	building.floors = 10
-	foundation = do cFoundation
 	foundation.material = 'stone'
 
-	eCorporateBuilding = engine.addEntity [building, foundation]
+When you call `@@dispose` method of entity instance, it will be removed from engine and relevant nodes as well.
 
-If you need to remove entity later, just call its `@@dispose` method. It will take care about removing itself from engine too.
+Keep in mind that entity is not added to nodes right away. Such changes are queued up and will be processed at the end of update cycle. This is to ensure consistent state of available nodes.
 
 #### Add the systems
 
-Simply add any system initializer to engine. Note that initializer is not called till the engine is actually started.
+System initializers are added to engine first. These are not invoked till the engine is actually started.
 
 	engine.addSystem sInput
 
@@ -292,57 +308,57 @@ Above method supports only single system passed in. You have to call it for each
 
 #### Start the engine
 
-Now when your engine is pumped up with systems, you can start it. It will call all system initializer functions to let them do their setup. There is currently no way how to actually stop the engine since it would essentially stop game and that's hardly ever required.
+Now when your engine is pumped up with systems, you can start it. It will call all system initializer functions to let them do their setup. There is currently no way how to actually stop the engine itself, but you can simply stop invoking update cycles if necessary.
 
 	engine.start done
 
-Argument `done` is here to support asynchronous operations. When everything is loaded and ready, it will be called in error-first callback style. How to make a asynchronous system will be cleared now.
+Argument `done` is here to support asynchronous operations. When everything is loaded and ready, it will be called in error-first callback style. System can be made asynchronous using an injections.
 
 #### Injections for system
 
-You may have heard about term *dependency injection* lately (especially in connection with some popular web frameworks). It's rather simple but powerful idea. Scent engine provides this to power up systems more easily.
+You may have heard about term *dependency injection*. It's rather simple but powerful idea. Scent engine provides this to power up systems more easily. As you may have noticed earlier, system initializer function isn't initially expecting any arguments. Since each system is different and has different needs, it would be cumbersome to have fixed arguments in there.
 
-As you may have noticed earlier, system initializer function isn't initially expecting any arguments. Since each system is different and has different needs, it would be cumbersome to have fixed arguments in there.
+	System 'powerful', (engine) ->
 
-	System 'powerful', (engine, done) ->
+Engine will analyze the name of arguments you have used for function declaration and provide configured values upon its invocation. Order of the arguments or their number doesn't matter here.
 
-Engine simply analyzes the name of arguments you have written in there and when invoking the initializer function, it will provide actual values that are connected to these names. Order of the arguments or their number doesn't matter here.
+There are two injections that are provided for you by default. First can be seen in example above, it's engine instance.
 
-Shown arguments are only two built-in injections. As you may have guessed, `engine` injection simply provides instance of engine where system was added. When you use `done` argument, your system becomes asynchronous. Be sure to call this callback or your engine will never start.
+##### Asynchronous system
+
+Second built-in injection is named `done` and once used in system initializer arguments, it marks the system as *asynchronous*. It is expected from you to call this callback whenever the system is ready.
+
+	System 'async', (done) ->
+		makeAsyncCall(done)
+
+Callback is error-first style and in case you pass anything truthy there, it will interrupt engine start and the result is propagated to callback from `start` method. Any arguments beside first one are ignored (at least for now). 
+
+Please note that once the engine is started, adding asynchronous system doesn't propagate its *done* state anywhere. You would have to ensure this on your own. Thus we recommend adding all asynchronous systems before engine is started.
 
 #### Extensible engine
 
 Now it's time to go deeper as so far the engine is nice, but not that powerful as it can be. There are numerous extensions available and you can write your own too. Extension is simple function that is called by engine during its initialization. When that happens ? Look at the following code.
 
-	engine = Engine (engine, extend, provide) ->
+	engine = Engine (engine) ->
 		# Here goes any extensions and setup
 
-Passed function is called immediately with created engine instance (among other two), except it is not frozen yet in here. You can do anything you like in here with the engine instance. However once this function ends, your engine is locked and cannot be extended further.
+Passed function is called immediately with created engine instance except it is not frozen yet in here. You can do anything you like with the engine instance. Once this function ends, engine instance is frozen and cannot be extended further.
 
-##### Extensions
-
-You can extend engine instance directly, but there is another more proper way.
-
-	myExtension = (engine, internals) ->
-	extend myExtension
-
-As you may see, there is added value to this. You are getting mysterious `internals` argument. You may not need it for every extension, but it contains some of the private variables and functions that are normally hidden from the outside world.
+Return value of engine initialization function is not important, but if you return array, it is assumed to be list of system initializers and it is handed over to `addSystems` method.
 
 ##### Custom injections
 
-During engine initialization you can call `provide` function passed in arguments as shown above to actually setup your own injection for system initializers.
+During engine initialization you can call `provide` function passed in arguments to actually setup your own injection for system initializers.
 
-	provide 'app', appInstance
+	engine = Engine (engine, provide) ->
+		provide 'app', appInstance
 
 Name defined here corresponds to the name of argument you need to use in your system initializer function. You can specify any static value that you want to provide, eg. object with shared settings that some systems might need. 
 
 If you specify function, it will be called every time when some system asks for such injection. You are expected to return some value that will be actually injected into the system.
 
-	setupFunction = (systemInitializer, done) ->
-		# Use done callback if operation is async
-		getAsyncConfigForSystem systemInitializer[ @@name ], done
-
-		# Or you can return value directly if you have it available
+	setupFunction = (engine, systemInitializer) ->
+		# Returned value is passed to system initializer
 		return getConfigForSystem systemInitializer[ @@name ]
 	
 	engine = Engine (engine, provide) ->
@@ -351,8 +367,6 @@ If you specify function, it will be called every time when some system asks for 
 	engine.addSystem System 'withSetup', (setup) ->
 		# Your system specific config is ready in here
 
-And that's it. It may seem somewhat overwhelming, but don't worry. You will not usually need most of it. It's just good to know that something like this is available to you.
-
 #### Multiple engines?
 
-This is the current limitation of the implementation. In case you would have created more engines, each of them would have separate list of entities. It would be like having multiple games in one code. Single entity can be currently coupled only with single engine. This is by design. If the need for multiple engines arises in future, I might implement it.
+This is the current limitation of the implementation. In case you would have created more engines, each of them would have separate list of entities. It would be like having multiple games in one code. Single entity can be currently coupled only with single engine. This is by design. If the need for multiple engines arises in future, we might implement it.

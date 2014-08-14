@@ -26,7 +26,7 @@ Entity = (components) ->
 		entity[ bDispose ] = Entity.disposed
 
 	# Add components passed in constructor
-	components and components.forEach entity.add, entity
+	components?.forEach entity.add, entity
 
 	return entity
 

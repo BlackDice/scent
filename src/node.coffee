@@ -13,7 +13,7 @@ symbols = require './symbols'
 bList = Symbol 'list of components required by node'
 bPool = Symbol 'pool of disposed nodes ready to use'
 
-module.exports = Node = (componentTypes, storageMap) ->
+Node = (componentTypes, storageMap) ->
 
 	# Wrap the value into array if none passed
 	componentTypes = [componentTypes] unless _.isArray componentTypes
@@ -107,7 +107,7 @@ NodeListProps['tail'] =
 
 NodeListProps['size'] =
 	enumerable: yes
-	get: -> Lill.getSize this	
+	get: -> Lill.getSize this
 
 hashComponent = (result, componentType) ->
 	result *= componentType[ symbols.bNumber ]
@@ -127,3 +127,5 @@ validateStorageMap = (storageMap) ->
 	return false unless storageMap
 	return true if storageMap instanceof Map
 	return _.isFunction(storageMap.get) and _.isFunction(storageMap.set)
+
+module.exports = Node

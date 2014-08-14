@@ -12,7 +12,7 @@ sData = Symbol 'data array for the component'
 
 emptyFields = []
 
-componentNumbers = require './component-number'
+primes = require './primes'
 
 module.exports = Component = (name, fields) ->
 	unless _.isString name 
@@ -48,7 +48,7 @@ module.exports = Component = (name, fields) ->
 	Factory[sPool] = [] # private pool of components
 	Factory[symbols.bFields] = fields
 	Factory[symbols.bName] = name
-	Factory[symbols.bNumber] = componentNumbers[components.size]
+	Factory[symbols.bNumber] = primes[components.size]
 
 	toString = "Component #{name}: " + fields.join ', '
 	Factory.toString = -> toString		
