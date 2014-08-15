@@ -5,11 +5,12 @@ _ = require 'lodash'
 fast = require 'fast.js'
 fnArgs = require 'fn-args'
 async = require 'async'
+nome = require 'nome'
+Lill = require 'lill'
 
 {Map} = require './es6-support'
 
 symbols = require './symbols'
-
 Node = require './node'
 Entity = require './entity'
 
@@ -19,18 +20,19 @@ Engine = (initializer) ->
         throw new TypeError 'expected function as engine initializer'
 
     engine = Object.create null
-
     isStarted = no
-    memoryMap = new Map 
-    systemList = []
-    injections = new Map
 
-    engine.getNode = (componentTypes) -> 
-        return Node componentTypes, memoryMap
+    nodeMap = new Map 
+    engine.getNodeType = (componentTypes) -> 
+        return Node componentTypes, nodeMap
 
+    updatedEntities = Lill.attach {}
     engine.addEntity = (components) ->
-        return Entity components
+        entity = Entity components
+        Lill.add updatedEntities, entity
+        return entity
 
+    systemList = []
     engine.addSystem = (systemInitializer) ->
         unless systemInitializer and _.isFunction systemInitializer
             throw new TypeError 'expected function for addSystem call'
@@ -75,6 +77,37 @@ Engine = (initializer) ->
 
         return this
 
+    engine.update = nome ->
+        nodeTypes = nodeMap.values()
+        entry = nodeTypes.next()
+        while not entry.done
+            updateNodeTypes entry.value
+            entry = nodeTypes.next()
+        Lill.clear updatedEntities
+
+    engine.onUpdate = engine.update[ nome.bNotify ]
+
+    nomeDisposed = Entity.disposed[ nome.bNotify ] ->
+        Lill.add updatedEntities, this
+    nomeAdded = Entity.componentAdded[ nome.bNotify ] ->
+        Lill.add updatedEntities, this
+    nomeRemoved = Entity.componentRemoved[ nome.bNotify ] ->
+        Lill.add updatedEntities, this
+
+    engine[ symbols.bDispose ] = ->
+        Entity.disposed[ nome.bDenotify ] nomeDisposed
+        Entity.componentAdded[ nome.bDenotify ] nomeAdded
+        Entity.componentRemoved[ nome.bDenotify ] nomeRemoved
+        nodeMap.clear()
+        systemList.length = 0
+        injections.clear()        
+        Lill.detach updatedEntities
+        isStarted = no
+
+    updateNodeTypes = (nodeType) ->
+        Lill.each updatedEntities, (entity) ->
+            nodeType.updateEntity entity
+
     initializeSystemAsync = (systemInitializer, cb) ->
         handleError = (fn) ->
             result = fast.try fn
@@ -117,6 +150,8 @@ Engine = (initializer) ->
             args[i] = injection
 
         return args
+
+    injections = new Map
 
     provide = (name, injection) ->
         if Object.isFrozen engine

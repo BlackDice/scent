@@ -24,6 +24,7 @@ Entity = (components) ->
 		entity = Object.create entityPrototype, entityProps
 		entity[ bList ] = new Map
 		entity[ bDispose ] = Entity.disposed
+		entity[ bNodes ] = new Map
 
 	# Add components passed in constructor
 	components?.forEach entity.add, entity

@@ -273,7 +273,9 @@ Usually you want your systems to their work in some kind of timed fashion. How y
 
 	engine.update timestamp
 
-You can pass any arguments you like in there. Those will be simply handed over to update handlers. How to actually register update handler will be explained later.
+You can pass any arguments you like in there. Those will be simply handed over to update handlers. To register update handler you can do this (even repeatedly) from within system initializer.
+
+	engine.onUpdate (timestamp) ->
 
 #### Access to nodes
 
@@ -308,7 +310,7 @@ Above method supports only single system passed in. You have to call it for each
 
 #### Start the engine
 
-Now when your engine is pumped up with systems, you can start it. It will call all system initializer functions to let them do their setup. There is currently no way how to actually stop the engine itself, but you can simply stop invoking update cycles if necessary.
+Now when your engine is pumped up with systems, you can start it. It will call all system initializer functions to let them do their setup. There is currently no way how to actually stop the engine itself, but you can simply stop invoking update cycles if necessary. However you can call its `@@dispose` method to clean all used resources if you ever need that.
 
 	engine.start done
 
@@ -369,4 +371,4 @@ If you specify function, it will be called every time when some system asks for 
 
 #### Multiple engines?
 
-This is the current limitation of the implementation. In case you would have created more engines, each of them would have separate list of entities. It would be like having multiple games in one code. Single entity can be currently coupled only with single engine. This is by design. If the need for multiple engines arises in future, we might implement it.
+This is the current limitation of the implementation. In case you would have created more engines, each of them would have separate list of entities. It would be like having multiple games in one code. This is by design. If the need for multiple engines arises in future, we might implement it.
