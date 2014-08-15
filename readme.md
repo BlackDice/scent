@@ -281,7 +281,7 @@ You can pass any arguments you like in there. Those will be simply handed over t
 
 Engine handles memory map of node types for you. All node types you access through the engine are remembered and you can access them from any system.
 
-	nStructure = engine.getNode [cBuilding, cFoundation]
+	nStructure = engine.getNodeType [cBuilding, cFoundation]
 
 #### Entity management
 
@@ -371,4 +371,4 @@ If you specify function, it will be called every time when some system asks for 
 
 #### Multiple engines?
 
-This is the current limitation of the implementation. In case you would have created more engines, each of them would have separate list of entities. It would be like having multiple games in one code. This is by design. If the need for multiple engines arises in future, we might implement it.
+Technically you can created multiple engine instances, but there is currently no way how to add created entity to the engine. All entities and node types are private to that engine. This is the current limitation of the implementation. If the need for multiple engines arises in future, we might implement it.
