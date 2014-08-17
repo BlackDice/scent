@@ -38,6 +38,12 @@ There is notation for variables holding known types defined by this framework. A
 
 Scent is completely class-less framework. There is no inheritance of any framework part as it's not needed. **Do not use** `new` keyword when using the framework functions. It will not change it's behavior in any way, but internally you will be creating object that is thrown away. For performance reasons there are no checks if you have used `new` keyword.
 
+### Error handling
+
+There are some checks for correct type or format of arguments that can throw error. Basically you don't need to handle these errors because they are meant to alert you about doing something seriously wrong. 
+
+There are no errors thrown during runtime. Instead the [debug](https://www.npmjs.org/package/debug) module is used with prefix of "scent:" that warns you about runtime issues.
+
 ### EcmaScript 6 support
 
 Framework is using some of the features as defined by EcmaScript6 draft. Since the implementation in current environments are not really production ready, framework is using shims. All used features are exported in `es6-support` file to easily allow replacement by another implementation.
@@ -71,9 +77,15 @@ You can completely omit list of properties and effectively creating component ca
 
 Component type exposes some symbols. You might be interested in @@name to get the actual name of component you have passed in first argument.
 
-There is also property @@number that contains numeric identifier of component type. It is based on prime numbers so it's basically unique if handled correctly.
+There is also property @@identity that contains numeric identifier of component type. It is based on prime numbers so it's basically unique if handled correctly.
 
 Lastly there is property @@fields containing array of property names you have requested, filtered out for duplicates and non-string ones.
+
+##### Overwriting identity
+
+For more complex architecture where you depend on identity of components to be same over all different layers it might be useful to pass in identity number when creating component type. Otherwise one is picked from available list. Keep in mind that error will be thrown if you try to pass in not a prime number or the one that is already taken.
+
+	cSpecialComponent = 'special', identity: 677, fields: ['extra']
 
 ### Working with components
 

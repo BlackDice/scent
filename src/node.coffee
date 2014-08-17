@@ -110,7 +110,7 @@ NodeListProps['size'] =
 	get: -> Lill.getSize this
 
 hashComponent = (result, componentType) ->
-	result *= componentType[ symbols.bNumber ]
+	result *= componentType[ symbols.bIdentity ]
 
 validateEntity = (entity) ->
 	unless entity and _.isFunction(entity.get)
@@ -119,7 +119,7 @@ validateEntity = (entity) ->
 
 validateComponentType = (componentType) ->
 	return false unless componentType
-	unless _.isFunction(componentType) and componentType[ symbols.bNumber ]
+	unless _.isFunction(componentType) and componentType[ symbols.bIdentity ]
 		throw new TypeError 'invalid component for node'
 	return true
 

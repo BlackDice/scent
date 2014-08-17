@@ -30,7 +30,6 @@ describe 'Component', ->
 		toThrow 'empty array', -> Component 'empty array', []
 		toThrow 'num array', -> Component 'num array', [1]
 		toThrow 'bool array', -> Component 'bool array', [true]
-		toThrow 'object', -> Component 'object', {}
 
 	it 'should return a component type function', ->
 		expect(Component 'factory').to.be.a "function"
@@ -49,11 +48,25 @@ describe 'Component', ->
 			cComponent = Component name = 'withname'
 			expect(cComponent[symbols.bName]).to.equal name
 
-		it 'should provide unique number of component in property @@number', ->
-			cComponent = Component 'hashed'
-			expect(cComponent[ symbols.bNumber ]).to.be.a "Number"
-			cComponent2 = Component 'hashed2'
-			expect(cComponent2[ symbols.bNumber ]).to.not.equal cComponent[symbols.bNumber]
+		it 'should set @@identity property to unique prime number', ->
+			cComponent = Component 'genIdentity'
+			expect(expected = cComponent[ symbols.bIdentity ]).to.be.a "Number"
+			primes = require '../src/primes'
+			expect(~primes.indexOf expected).not.to.equal 0
+			cComponent2 = Component 'genIdentity2'
+			expect(cComponent2[ symbols.bIdentity ]).to.not.equal expected
+
+		it 'can set identity from options object', ->
+			cComponent = Component 'withIdentity', identity: expected = 677
+			expect(cComponent[ symbols.bIdentity ]).to.equal expected
+
+		it 'forbids to use identity that is a not prime number', ->
+			fn = -> Component 'failIdentity', identity: 8
+			expect(fn).to.throw Error, /invalid identity/
+
+		it 'forbids to use identity that is already taken', ->
+			fn = -> Component 'usedIdentity', identity: 3
+			expect(fn).to.throw Error, /invalid identity/
 		
 		it 'should provide list of defined fields in @@fields', ->
 			cComponent = Component 'withfields', @fields
@@ -104,22 +117,17 @@ describe 'Component', ->
 		describe '@@dispose', ->
 
 			it 'should be a function', ->
-				expect(@component[symbols.bDispose]).to.be.an "function"
-
-			it 'should destroy component completely if no data were set', ->
-				do @component[symbols.bDispose]
-				newComponent = do @cComponent
-				expect(newComponent).to.not.equal @component
+				expect(@component[ symbols.bDispose ]).to.be.an "function"
 
 			it 'should unset all data of the component', ->
 				@component.test1 = 'a'
 				@component.test3 = 'b'
-				do @component[symbols.bDispose]
+				do @component[ symbols.bDispose ]
 				expect(@component.test1).to.not.be.ok
 				expect(@component.test3).to.not.be.ok
 
 			it 'should keep disposed component for next use', ->
 				@component.test2 = 'foo'
-				do @component[symbols.bDispose]
+				do @component[ symbols.bDispose ]
 				actual = do @cComponent
 				expect(actual).to.equal @component

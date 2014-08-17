@@ -85,7 +85,7 @@ validateComponent = (component) ->
 	validateComponentType component[ bType ]
 
 validateComponentType = (componentType) ->
-	unless _.isFunction(componentType) and componentType[ symbols.bNumber ]
+	unless _.isFunction(componentType) and componentType[ symbols.bIdentity ]
 		throw new TypeError 'invalid component for entity'
 
 Object.freeze Entity

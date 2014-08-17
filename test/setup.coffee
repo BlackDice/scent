@@ -20,7 +20,7 @@ module.exports.createMockComponent = (name) ->
 		component[ symbols.bType ] = Component
 		component.disposed = no
 		return component
-	Component[ symbols.bNumber ] = primes[components++]
+	Component[ symbols.bIdentity ] = primes[components++]
 	Component[ symbols.bName ] = name or 'mock'
 	Object.freeze Component
 	return Component

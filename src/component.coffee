@@ -1,78 +1,92 @@
 log = (require 'debug') 'scent:component'
 _ = require 'lodash'
 fast = require 'fast.js'
+lill = require 'lill'
 
 {Symbol, Map} = require './es6-support'
-components = new Map
 
 symbols = require './symbols'
-{bType} = symbols
-sPool = Symbol 'pool of disposed components'
-sData = Symbol 'data array for the component'
+bPool = Symbol 'pool of disposed components'
+bData = Symbol 'data array for the component'
 
-emptyFields = []
+components = new Map
+componentIdentities = fast.clone(require './primes').reverse()
 
-primes = require './primes'
+module.exports = Component = (name, opts) ->
+	verifyName name
 
-module.exports = Component = (name, fields) ->
-	unless _.isString name 
-		throw new TypeError 'missing name of the component'
+	return ComponentType if ComponentType = components.get name
 
-	# Return existing factory by the name
-	return Factory if Factory = components.get name
+	if opts and _.isPlainObject opts
+		fields = opts.fields
+		identity = verifyIdentity opts.identity
+	else 
+		fields = opts
+		identity = componentIdentities.pop()
 
-	if fields and not (_.isArray(fields) and (fields = fast.reduce _.uniq(fields), reduceField, []).length)
-		throw new TypeError 'invalid fields specified for component: '+fields
-	
-	fields or= emptyFields
+	if fields
+		fields = verifyFields fields
+		props = fast.reduce fields, reduceProperty, {}
+	else
+		fields = emptyFields
 
-	# log 'component with fields %j has been defined before', fields
-
-	# Create properties based on the fields
-	props = Object.create(null)
-	props[sData] = writable: yes
-
-	fast.reduce fields, createProps, props if fields isnt emptyFields
-
-	proto = {}
-	proto[symbols.bDispose] = dispose
-
-	Factory = ->
-		return pool.pop() if (pool = Factory[sPool]).length
-		component = Object.create proto, props
-		Object.seal component
+	proto = Object.create componentPrototype
+ 
+	ComponentType = ->
+		if (pool = ComponentType[ bPool ]).length
+			component = pool.pop()
+		else
+			component = Object.create proto, props
+			component[ bData ] = new Array(fields.length) if fields.length
+		Object.freeze component
 		return component
 
-	proto[bType] = Factory
+	proto[ symbols.bType ] = ComponentType
 
-	Factory[sPool] = [] # private pool of components
-	Factory[symbols.bFields] = fields
-	Factory[symbols.bName] = name
-	Factory[symbols.bNumber] = primes[components.size]
+	ComponentType[ bPool ] = []
+	ComponentType[ symbols.bFields ] = fields
+	ComponentType[ symbols.bName ] = name
+	ComponentType[ symbols.bIdentity ] = identity
 
 	toString = "Component #{name}: " + fields.join ', '
-	Factory.toString = -> toString		
+	ComponentType.toString = -> toString    
 	
-	Object.freeze Factory
-	components.set name, Factory
-	return Factory
+	Object.freeze ComponentType
+	components.set name, ComponentType
+	return ComponentType
 
-dispose = ->
-	return unless data = this[sData]
+componentPrototype = {}
+componentPrototype[ symbols.bDispose ] = dispose = ->
+	return unless data = this[ bData ]
 	data.length = 0
-	this[bType][sPool].push this
+	this[ symbols.bType ][ bPool ].push this
+Object.freeze componentPrototype
+
+emptyFields = Object.freeze []
 
 reduceField = (fields, field) ->
 	return fields unless _.isString(field)
 	fields.push field
 	return fields
 
-createProps = (props, field, i) ->
+reduceProperty = (props, field, i) ->
 	props[field] =
-		get: ->
-			return this[sData]?[i]
-		set: (val) ->
-			data = this[sData] or= new Array(this[bType][symbols.bFields].length)
-			data[i] = val
 		enumerable: yes
+		get: -> return this[ bData ][i]
+		set: (val) -> this[ bData ][i] = val
 	return props
+
+verifyName = (name) ->
+	unless _.isString name 
+		throw new TypeError 'missing name of the component'
+
+verifyFields = (fields) ->
+	unless _.isArray(fields) and (result = fast.reduce _.uniq(fields), reduceField, []).length
+		throw new TypeError 'invalid fields specified for component: '+fields
+	return result
+
+verifyIdentity = (identity) ->
+	identity = Number(identity)
+	unless ~fast.indexOf componentIdentities, identity
+		throw new Error 'invalid identity used for component: '+identity
+	return identity
