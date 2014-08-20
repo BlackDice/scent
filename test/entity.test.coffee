@@ -1,11 +1,12 @@
-{expect, sinon, createMockComponent} = require './setup'
+{expect, sinon} = require './setup'
 Entity = require '../src/entity'
+Component = require '../src/component'
 symbols = require '../src/symbols'
 
 NoMe = require 'nome'
 
 describe 'Entity', ->
-	
+
 	it 'should be a function', ->
 		expect(Entity).to.be.a "function"
 
@@ -13,7 +14,7 @@ describe 'Entity', ->
 		expect(do Entity).to.be.an "object"
 
 	it 'expects optional array of components at first argument', ->
-		toThrow = (msg, fn) -> 
+		toThrow = (msg, fn) ->
 			expect(fn).to.throw TypeError, /expected array of components/, msg
 		toThrow 'string', -> Entity 'str'
 		toThrow 'number', -> Entity 1
@@ -36,12 +37,14 @@ describe 'Entity', ->
 
 	describe 'instance', ->
 
+		before ->
+			@cAlphaComponent = Component 'alpha', ['alphaTest']
+			@cBetaComponent = Component 'beta', ['betaTest']
+
 		beforeEach ->
 			@entity = do Entity
-			@cAlpha = createMockComponent()
-			@cBeta = createMockComponent()
-			@alpha = do @cAlpha
-			@beta = do @cBeta
+			@alpha = do @cAlphaComponent
+			@beta = do @cBetaComponent
 
 		checkForComponent = (method) ->
 			expect(method).to.throw TypeError, /missing component/
@@ -74,6 +77,12 @@ describe 'Entity', ->
 				expect(spy).to.have.been.calledOn(@entity).calledWith(@alpha).calledOnce
 				Entity.componentAdded[ NoMe.bDenotify ] rem
 
+			it 'allows component to be added to single entity only', ->
+				@entity.add @alpha
+				otherEntity = do Entity
+				otherEntity.add @alpha
+				expect(otherEntity.has @cAlphaComponent).to.be.false
+
 		it 'responds to replace method', ->
 			expect(@entity).to.respondTo 'replace'
 
@@ -87,16 +96,23 @@ describe 'Entity', ->
 
 			it 'should replace existing component', ->
 				@entity.add @alpha
-				newAlpha = do @cAlpha
+				newAlpha = do @cAlphaComponent
 				@entity.replace newAlpha
-				expect(@entity.get @cAlpha).to.equal newAlpha
-				expect(@entity.has @cAlpha).to.be.true
+				expect(@entity.get @cAlphaComponent).to.equal newAlpha
+				expect(@entity.has @cAlphaComponent).to.be.true
 
 			it 'calls notifier componentAdded', ->
 				rem = Entity.componentAdded[ NoMe.bNotify ] spy = sinon.spy()
 				@entity.replace @alpha
 				expect(spy).to.have.been.calledOn(@entity).calledWith(@alpha).calledOnce
 				Entity.componentAdded[ NoMe.bDenotify ] rem
+
+			it 'allow replaced component to be added in another entity', ->
+				@entity.add @alpha
+				@entity.replace do @cAlphaComponent
+				otherEntity = do Entity
+				otherEntity.add @alpha
+				expect(otherEntity.has @cAlphaComponent).to.be.true
 
 		it 'responds to has method', ->
 			expect(@entity).to.respondTo 'has'
@@ -107,11 +123,11 @@ describe 'Entity', ->
 				checkForComponentType (val) => @entity.has val
 
 			it 'should return false for non-existing component', ->
-				expect(@entity.has @cAlpha).to.be.false
+				expect(@entity.has @cAlphaComponent).to.be.false
 
 			it 'should return true for previously added component', ->
 				@entity.add @alpha
-				expect(@entity.has @cAlpha).to.be.true
+				expect(@entity.has @cAlphaComponent).to.be.true
 
 		it 'responds to get method', ->
 			expect(@entity).to.respondTo 'get'
@@ -122,11 +138,11 @@ describe 'Entity', ->
 				checkForComponentType (val) => @entity.get val
 
 			it 'should return null for non-existing component', ->
-				expect(@entity.get @cAlpha).to.equal null
+				expect(@entity.get @cAlphaComponent).to.equal null
 
 			it 'should return previously added component', ->
 				@entity.add @alpha
-				expect(@entity.get @cAlpha).to.equal @alpha
+				expect(@entity.get @cAlphaComponent).to.equal @alpha
 
 		it 'responds to remove method', ->
 			expect(@entity).to.respondTo 'remove'
@@ -138,33 +154,80 @@ describe 'Entity', ->
 
 			it 'should not remove anything when non-existing component specified', ->
 				@entity.add @alpha
-				@entity.remove @cBeta
-				expect(@entity.has @cAlpha).to.be.true
+				@entity.remove @cBetaComponent
+				expect(@entity.has @cAlphaComponent).to.be.true
 
 			it 'should remove component of specified type', ->
 				@entity.add @alpha
-				@entity.remove @cAlpha
-				expect(@entity.has @cAlpha).to.be.false
+				@entity.remove @cAlphaComponent
+				expect(@entity.has @cAlphaComponent).to.be.false
 
 			it 'should call dispose method of removed component by default', ->
+				rem = Component.disposed[ NoMe.bNotify ] spy = sinon.spy()
 				@entity.add @alpha
-				@entity.remove @cAlpha
-				expect(@alpha.disposed).to.be.true
+				@entity.remove @cAlphaComponent
+				expect(spy).to.have.been.calledOn(@alpha)
+				Component.disposed[ NoMe.bDenotify ] rem
 
 			it 'should not call dispose of component if second argument is false', ->
+				rem = Component.disposed[ NoMe.bNotify ] spy = sinon.spy()
 				@entity.add @alpha
-				@entity.remove @cAlpha, false
-				expect(@alpha.disposed).to.be.false
+				@entity.remove @cAlphaComponent, false
+				expect(spy).to.not.have.been.called
+				Component.disposed[ NoMe.bDenotify ] rem
 
 			it 'calls notifier componentRemoved', ->
 				@entity.add @alpha
 				rem = Entity.componentRemoved[ NoMe.bNotify ] spy = sinon.spy()
-				@entity.remove @cAlpha
-				expect(spy).to.have.been.calledOn(@entity).calledWith(@cAlpha).calledOnce
+				@entity.remove @cAlphaComponent
+				expect(spy).to.have.been.calledOn(@entity).calledWith(@cAlphaComponent).calledOnce
 				Entity.componentRemoved[ NoMe.bDenotify ] rem
 
+			it 'allows removed component to be added in another entity', ->
+				@entity.add @alpha
+				@entity.remove @cAlphaComponent
+				otherEntity = do Entity
+				otherEntity.add @alpha
+				expect(otherEntity.has @cAlphaComponent).to.be.true
+
 		it 'responds to @@dispose method', ->
-			expect(@entity[symbols.bDispose]).to.be.a "function"
+			expect(@entity[ symbols.bDispose ]).to.be.a "function"
+
+		describe '@@changed', ->
+
+			beforeEach ->
+				@clock = sinon.useFakeTimers @now = Date.now()
+
+			afterEach ->
+				@clock.restore()
+
+			it 'should be own property', ->
+				expect(@entity[ symbols.bChanged ]).to.exist
+
+			it 'should equal to 0 for a fresh entity', ->
+				expect(@entity[ symbols.bChanged ]).to.equal 0
+
+			it 'should equal to current timestamp when component is added', ->
+				@entity.add @alpha
+				expect(@entity[ symbols.bChanged ]).to.equal @now
+
+			it 'should equal to current timestamp when component is removed', ->
+				@entity.remove @cBetaComponent
+				expect(@entity[ symbols.bChanged ]).to.equal 0
+				@entity.add @alpha
+				@clock.tick 500
+				@entity.remove @cAlphaComponent
+				expect(@entity[ symbols.bChanged ]).to.equal @now + 500
+
+			it 'should be updated when component data has changed', ->
+				@entity.add @alpha
+				@entity.add @beta
+				@clock.tick 500
+				@alpha.alphaTest = 10
+				expect(@entity[ symbols.bChanged ]).to.equal @now + 500
+				@clock.tick 500
+				@beta.betaTest = 20
+				expect(@entity[ symbols.bChanged ]).to.equal @now + 1000
 
 		describe '@@dispose', ->
 
@@ -172,15 +235,18 @@ describe 'Entity', ->
 				@entity.add @alpha
 				@entity.add @beta
 				do @entity[ symbols.bDispose ]
-				expect(@entity.has @cAlpha).to.be.false
-				expect(@entity.has @cBeta).to.be.false
+				expect(@entity.has @cAlphaComponent).to.be.false
+				expect(@entity.has @cBetaComponent).to.be.false
 
 			it 'should call dispose method of all components', ->
+				rem = Component.disposed[ NoMe.bNotify ] spy = sinon.spy()
 				@entity.add @alpha
 				@entity.add @beta
 				do @entity[ symbols.bDispose ]
-				expect(@alpha.disposed).to.be.true
-				expect(@alpha.disposed).to.be.true
+				expect(spy).to.have.been.calledOn @alpha
+				expect(spy).to.have.been.calledOn @beta
+				expect(spy).to.have.been.calledTwice
+				Component.disposed[ NoMe.bDenotify ] rem
 
 			it 'store entity into the pool for later retrieval', ->
 				expected = do Entity
@@ -194,10 +260,15 @@ describe 'Entity', ->
 				expect(spy).to.have.been.calledOn(@entity).calledOnce
 				Entity.disposed[ NoMe.bDenotify ] rem
 
+			it 'should reset @@changed property for disposed entity', ->
+				@entity.add @alpha
+				do @entity[ symbols.bDispose ]
+				expect(@entity[ symbols.bChanged ]).to.equal 0
+
 		it 'adds components passed in constructor array', ->
 			entity = Entity [@alpha, @beta, @beta]
-			expect(entity.has @cAlpha).to.be.true
-			expect(entity.has @cBeta).to.be.true
+			expect(entity.has @cAlphaComponent).to.be.true
+			expect(entity.has @cBetaComponent).to.be.true
 
 		it 'has size property containing number of components in entity', ->
 			expect(@entity).to.have.property "size", 0
@@ -205,20 +276,14 @@ describe 'Entity', ->
 			expect(@entity).to.have.property "size", 1
 			@entity.add @beta
 			expect(@entity).to.have.property "size", 2
-			@entity.remove @cAlpha
+			@entity.remove @cAlphaComponent
 			expect(@entity).to.have.property "size", 1
 
-		it 'works as expected', ->
-			@entity.add @alpha
-			expect(@entity.get @cAlpha).to.equal @alpha
-			expect(@entity.has @cAlpha).to.be.true
-			
-			newAlpha = do @cAlpha
-			@entity.replace newAlpha
-			expect(@entity.get @cAlpha).to.equal newAlpha
+	it 'removes entity components that were disposed', ->
 
-			@entity.add @beta
-			@entity.remove @cAlpha
-
-			expect(@entity.get @cBeta).to.equal @beta
-			expect(@entity.has @cBeta).to.be.true
+		cComponent = Component 'disposing', ['alpha', 'beta']
+		component = do cComponent
+		entity = do Entity
+		entity.add component
+		do component[ symbols.bDispose ]
+		expect(entity.has cComponent).to.be.false

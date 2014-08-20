@@ -2,29 +2,30 @@
 
 log = (require 'debug') 'scent:entity'
 _ = require 'lodash'
+lill = require 'lill'
+NoMe = require 'nome'
 
 {Symbol, Map} = require './es6-support'
 
 symbols = require './symbols'
-{bDispose, bType, bNodes} = symbols
+bEntity = Symbol 'represent entity reference on the component'
 bList = Symbol 'map of components in the entity'
+bEntityChanged = Symbol 'timestamp of change of component list'
 
-entityPool = {}
-Lill = require 'lill'
-Lill.attach entityPool
+entityPool = lill.attach {}
 
 Entity = (components) ->
 
 	if components and not _.isArray components
 		throw new TypeError 'expected array of components for entity'
 
-	if entity = Lill.getTail entityPool
-		Lill.remove entityPool, entity
+	if entity = lill.getTail entityPool
+		lill.remove entityPool, entity
 	else
 		entity = Object.create entityPrototype, entityProps
 		entity[ bList ] = new Map
-		entity[ bDispose ] = Entity.disposed
-		entity[ bNodes ] = new Map
+		entity[ symbols.bDispose ] = Entity.disposed
+		entity[ symbols.bNodes ] = new Map
 
 	# Add components passed in constructor
 	components?.forEach entity.add, entity
@@ -36,13 +37,17 @@ entityProps = 'size': get: -> return this[ bList ].size
 entityPrototype =
 	add: (component) ->
 		validateComponent component
-		if this[ bList ].has componentType = component[ bType ]
+		return this if hasOtherEntity component, this
+		if this[ bList ].has componentType = component[ symbols.bType ]
 			log 'entity already contains component `%s`, consider using replace method if this is intended', component[ symbols.bName ]
 		Entity.componentAdded.call this, component
 		return this
 
 	replace: (component) ->
 		validateComponent component
+		return this if hasOtherEntity component, this
+		if currentComponent = this[ bList ].get component[ symbols.bType ]
+			delete currentComponent[ bEntity ]
 		Entity.componentAdded.call this, component
 		return this
 
@@ -60,34 +65,56 @@ entityPrototype =
 			disposeComponent component
 		Entity.componentRemoved.call this, componentType
 
-NoMe = require 'nome'
+Object.defineProperty entityPrototype, symbols.bChanged, get: ->
+	return 0 unless changed = this[ bEntityChanged ]
+	components = this[ bList ].values()
+	entry = components.next()
+	while not entry.done
+		changed = Math.max changed, entry.value[ symbols.bChanged ]
+		entry = components.next()
+	return changed
 
 Entity.componentAdded = NoMe (component) ->
-	this[ bList ].set component[ bType ], component
+	component[ bEntity ] = this
+	this[ bList ].set component[ symbols.bType ], component
+	this[ bEntityChanged ] = Date.now()
 	return this
 
 Entity.componentRemoved = NoMe (componentType) ->
-	this[ bList ].delete componentType
+	delete this[ bList ].get(componentType)?[ bEntity ]
+	if this[ bList ].delete componentType
+		this[ bEntityChanged ] = Date.now()
 	return this
 
 Entity.disposed = NoMe ->
 	this[ bList ].forEach disposeComponent
 	this[ bList ].clear()
-	Lill.add entityPool, this
+	delete this[ bEntityChanged ]
+	lill.add entityPool, this
 	return this
 
+(require './component').disposed[ NoMe.bNotify ] ->
+	if entity = this[ bEntity ]
+		entity.remove this[ symbols.bType ]
+		delete this[ bEntity ]
+
+hasOtherEntity = (component, entity) ->
+	if result = inEntity = component[ bEntity ] and inEntity isnt entity
+		log 'component %s cannot be shared with multiple entities', component
+	return result
+
 disposeComponent = (component) ->
-	do component[ bDispose ]
+	delete component[ bEntity ]
+	do component[ symbols.bDispose ]
 
 validateComponent = (component) ->
 	unless component
 		throw new TypeError 'missing component for entity'
-	validateComponentType component[ bType ]
+	validateComponentType component[ symbols.bType ]
 
 validateComponentType = (componentType) ->
 	unless _.isFunction(componentType) and componentType[ symbols.bIdentity ]
-		throw new TypeError 'invalid component for entity'
+		throw new TypeError 'invalid component type for entity'
 
 Object.freeze Entity
-Object.freeze entityPrototype
 module.exports = Entity

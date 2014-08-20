@@ -40,7 +40,7 @@ Scent is completely class-less framework. There is no inheritance of any framewo
 
 ### Error handling
 
-There are some checks for correct type or format of arguments that can throw error. Basically you don't need to handle these errors because they are meant to alert you about doing something seriously wrong. 
+There are some checks for correct type or format of arguments that can throw error. Basically you don't need to handle these errors because they are meant to alert you about doing something seriously wrong.
 
 There are no errors thrown during runtime. Instead the [debug](https://www.npmjs.org/package/debug) module is used with prefix of "scent:" that warns you about runtime issues.
 
@@ -77,11 +77,13 @@ You can completely omit list of properties and effectively creating component ca
 
 Component type exposes some symbols. You might be interested in @@name to get the actual name of component you have passed in first argument.
 
-There is also property @@identity that contains numeric identifier of component type. It is based on prime numbers so it's basically unique if handled correctly.
+There is also property `@@identity` that contains numeric identifier of component type. It is based on prime numbers so it's basically unique if handled correctly.
+
+Another useful property is `@@changed` which contains timestamp (from `Date.now()` call) of the last change in component data. If no change occurred, there will be 0.
 
 Lastly there is property @@fields containing array of property names you have requested, filtered out for duplicates and non-string ones.
 
-##### Overwriting identity
+#### Overwriting identity
 
 For more complex architecture where you depend on identity of components to be same over all different layers it might be useful to pass in identity number when creating component type. Otherwise one is picked from available list. Keep in mind that error will be thrown if you try to pass in not a prime number or the one that is already taken.
 
@@ -160,7 +162,7 @@ When you don't need whole entity any more, you can remove it from the game simpl
 
 #### Change notifications
 
-Entity object exposes couple of methods monitored with [NoMe](https://github.com/BlackDice/nome). It's highly discouraged to use these methods directly as you would be skipping some of the checks. You can attach to these to get notified about changes. Names of methods are self explanatory.
+Entity object exposes couple of methods monitored with [NoMe](https://github.com/BlackDice/nome). It's highly discouraged to invoke these methods directly as you would be skipping some of the required checks. You can attach to these to get notified about changes. Names of methods are self explanatory.
 
 	Entity.componentAdded
 	Entity.componentRemoved
@@ -168,6 +170,10 @@ Entity object exposes couple of methods monitored with [NoMe](https://github.com
 
 	Entity.componentAdded.notify (component) ->
 		# context is entity instance
+
+#### Timestamp change
+
+As components have `@@changed` property, this is propagated to the entity too. It gets updated whenever any component owned by entity is changed. It is also updated when any component is added or removed from entity. Empty entity without component will have timestamp of 0.
 
 ### Swimming in big entity pool
 
@@ -210,12 +216,12 @@ In most of the scenarios you are interested in the whole list of node items and 
 
 	loopNodes = (node, idx) ->
 		# Do something with the node
-	
+
 	nStructure.each loopNodes
 
 ##### Advanced looping
 
-Internally the list of node items is held in linked list structure. In case you need more control over the looping, continue reading. 
+Internally the list of node items is held in linked list structure. In case you need more control over the looping, continue reading.
 
 You have access to the beginning and also end of the list.
 
@@ -229,7 +235,7 @@ Every node item has properties `@@next` and `@@prev` to reference its neighbors 
 		# Do something with the node
 		node = node[ @@next ]
 
-Note that `@@next` and `@@prev` properties are `null` in case they would be pointing to itself. Eg. one node in the list has no *next*, first node of two item list has no *prev*, etc... 
+Note that `@@next` and `@@prev` properties are `null` in case they would be pointing to itself. Eg. one node in the list has no *next*, first node of two item list has no *prev*, etc...
 
 #### Access to components
 
@@ -237,12 +243,12 @@ Node item is directly linked to entity that is stored into `@@entity` property. 
 
 	loopNodes = (node) ->
 		node.building.floors += 1 # directly increase floors of cBuilding component
-		if node.foundation.material = 'steel' 
+		if node.foundation.material = 'steel'
 			do node[ @@entity ][ @@dispose ] # remove the entity from the game
 
 ### Need for logic
 
-Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural). 
+Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural).
 
 System is piece of code that is able to work with data. System can be really simple, like single function that does its job when asked for it. Over complicated system is much harder to read, test, maintain and debug. Keep that in mind when designing your systems.
 
@@ -345,7 +351,7 @@ Second built-in injection is named `done` and once used in system initializer ar
 	System 'async', (done) ->
 		makeAsyncCall(done)
 
-Callback is error-first style and in case you pass anything truthy there, it will interrupt engine start and the result is propagated to callback from `start` method. Any arguments beside first one are ignored (at least for now). 
+Callback is error-first style and in case you pass anything truthy there, it will interrupt engine start and the result is propagated to callback from `start` method. Any arguments beside first one are ignored (at least for now).
 
 Please note that once the engine is started, adding asynchronous system doesn't propagate its *done* state anywhere. You would have to ensure this on your own. Thus we recommend adding all asynchronous systems before engine is started.
 
@@ -367,14 +373,14 @@ During engine initialization you can call `provide` function passed in arguments
 	engine = Engine (engine, provide) ->
 		provide 'app', appInstance
 
-Name defined here corresponds to the name of argument you need to use in your system initializer function. You can specify any static value that you want to provide, eg. object with shared settings that some systems might need. 
+Name defined here corresponds to the name of argument you need to use in your system initializer function. You can specify any static value that you want to provide, eg. object with shared settings that some systems might need.
 
 If you specify function, it will be called every time when some system asks for such injection. You are expected to return some value that will be actually injected into the system.
 
 	setupFunction = (engine, systemInitializer) ->
 		# Returned value is passed to system initializer
 		return getConfigForSystem systemInitializer[ @@name ]
-	
+
 	engine = Engine (engine, provide) ->
 		provide 'setup', setupFunction
 
