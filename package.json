@@ -6,16 +6,18 @@
     "type": "git",
     "url": "git@git.mrammor.com:library/scent.git"
   },
+  "main": "lib/scent.js",
   "license": "MIT",
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "mocha"
   },
   "devDependencies": {
     "sinon-chai": "^2.5.0",
     "chai-as-promised": "^4.1.1",
     "sinon": "^1.10.3",
     "chai": "^1.9.1",
-    "coffeeify": "^0.7.0"
+    "coffeeify": "^0.7.0",
+    "coffee-script": "^1.7.1"
   },
   "dependencies": {
     "debug": "^1.0.4",
