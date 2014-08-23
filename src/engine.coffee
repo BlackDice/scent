@@ -5,7 +5,7 @@ _ = require 'lodash'
 fast = require 'fast.js'
 fnArgs = require 'fn-args'
 async = require 'async'
-nome = require 'nome'
+NoMe = require 'nome'
 Lill = require 'lill'
 
 {Map} = require './es6-support'
@@ -22,13 +22,21 @@ Engine = (initializer) ->
 	engine = Object.create null
 	isStarted = no
 
-	nodeMap = new Map 
-	engine.getNodeType = (componentTypes) -> 
+	# Memory map of node types used by this engine
+	nodeMap = new Map
+
+	engine.getNodeType = (componentTypes) ->
 		return Node componentTypes, nodeMap
 
+	# List of all entities in this engine
+	engine.entityList = Lill.attach {}
+
+	# List of entities that were updated
 	updatedEntities = Lill.attach {}
+
 	engine.addEntity = (components) ->
 		entity = Entity components
+		Lill.add engine.entityList, entity
 		Lill.add updatedEntities, entity
 		return entity
 
@@ -66,7 +74,7 @@ Engine = (initializer) ->
 
 		if isStarted
 			throw new Error 'engine has been started already'
-		
+
 		if done
 			async.each systemList, initializeSystemAsync, (err) ->
 				isStarted = yes
@@ -77,7 +85,7 @@ Engine = (initializer) ->
 
 		return this
 
-	engine.update = nome ->
+	engine.update = NoMe ->
 		nodeTypes = nodeMap.values()
 		entry = nodeTypes.next()
 		while not entry.done
@@ -85,22 +93,26 @@ Engine = (initializer) ->
 			entry = nodeTypes.next()
 		Lill.clear updatedEntities
 
-	engine.onUpdate = engine.update[ nome.bNotify ]
+	engine.onUpdate = engine.update[ NoMe.bNotify ]
 
-	nomeDisposed = Entity.disposed[ nome.bNotify ] ->
+	nomeDisposed = Entity.disposed[ NoMe.bNotify ] ->
+		# TODO: Possible error if disposing entity that is not
+		# in this engine, it would be added to it like this!
 		Lill.add updatedEntities, this
-	nomeAdded = Entity.componentAdded[ nome.bNotify ] ->
+		Lill.remove engine.entityList, this
+
+	nomeAdded = Entity.componentAdded[ NoMe.bNotify ] ->
 		Lill.add updatedEntities, this
-	nomeRemoved = Entity.componentRemoved[ nome.bNotify ] ->
+	nomeRemoved = Entity.componentRemoved[ NoMe.bNotify ] ->
 		Lill.add updatedEntities, this
 
 	engine[ symbols.bDispose ] = ->
-		Entity.disposed[ nome.bDenotify ] nomeDisposed
-		Entity.componentAdded[ nome.bDenotify ] nomeAdded
-		Entity.componentRemoved[ nome.bDenotify ] nomeRemoved
+		Entity.disposed[ NoMe.bDenotify ] nomeDisposed
+		Entity.componentAdded[ NoMe.bDenotify ] nomeAdded
+		Entity.componentRemoved[ NoMe.bDenotify ] nomeRemoved
 		nodeMap.clear()
 		systemList.length = 0
-		injections.clear()        
+		injections.clear()
 		Lill.detach updatedEntities
 		isStarted = no
 

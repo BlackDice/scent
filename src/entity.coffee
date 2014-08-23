@@ -52,15 +52,12 @@ entityPrototype =
 		return this
 
 	has: (componentType) ->
-		validateComponentType componentType
 		return this[ bList ].has componentType
 
 	get: (componentType) ->
-		validateComponentType componentType
 		return this[ bList ].get(componentType) or null
 
 	remove: (componentType, dispose) ->
-		validateComponentType componentType
 		if false isnt dispose and component = this[ bList ].get componentType
 			disposeComponent component
 		Entity.componentRemoved.call this, componentType

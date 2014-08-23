@@ -38,8 +38,8 @@ describe 'Entity', ->
 	describe 'instance', ->
 
 		before ->
-			@cAlphaComponent = Component 'alpha', ['alphaTest']
-			@cBetaComponent = Component 'beta', ['betaTest']
+			@cAlphaComponent = Component 'alpha', 'alphaTest'
+			@cBetaComponent = Component 'beta', 'betaTest'
 
 		beforeEach ->
 			@entity = do Entity
@@ -119,9 +119,6 @@ describe 'Entity', ->
 
 		describe 'has()', ->
 
-			it 'should throw error if invalid component type passed in', ->
-				checkForComponentType (val) => @entity.has val
-
 			it 'should return false for non-existing component', ->
 				expect(@entity.has @cAlphaComponent).to.be.false
 
@@ -133,9 +130,6 @@ describe 'Entity', ->
 			expect(@entity).to.respondTo 'get'
 
 		describe 'get()', ->
-
-			it 'should throw error if invalid component type passed in', ->
-				checkForComponentType (val) => @entity.get val
 
 			it 'should return null for non-existing component', ->
 				expect(@entity.get @cAlphaComponent).to.equal null
@@ -149,13 +143,15 @@ describe 'Entity', ->
 
 		describe 'remove()', ->
 
-			it 'should throw error if invalid component type passed in', ->
-				checkForComponentType (val) => @entity.remove val
-
 			it 'should not remove anything when non-existing component specified', ->
 				@entity.add @alpha
 				@entity.remove @cBetaComponent
 				expect(@entity.has @cAlphaComponent).to.be.true
+
+			it 'should remove component instance passed', ->
+				@entity.add @alpha
+				@entity.remove @cAlphaComponent
+				expect(@entity.has @cAlphaComponent).to.be.false
 
 			it 'should remove component of specified type', ->
 				@entity.add @alpha
@@ -281,7 +277,7 @@ describe 'Entity', ->
 
 	it 'removes entity components that were disposed', ->
 
-		cComponent = Component 'disposing', ['alpha', 'beta']
+		cComponent = Component 'disposing', 'alpha beta'
 		component = do cComponent
 		entity = do Entity
 		entity.add component

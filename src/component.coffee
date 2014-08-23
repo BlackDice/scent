@@ -1,32 +1,26 @@
+'use strict'
+
 log = (require 'debug') 'scent:component'
 _ = require 'lodash'
 fast = require 'fast.js'
 lill = require 'lill'
 NoMe = require 'nome'
 
-{Symbol, Map} = require './es6-support'
+{Symbol, Map, Set} = require './es6-support'
 
 symbols = require './symbols'
 bPool = Symbol 'pool of disposed components'
 bData = Symbol 'data array for the component'
 
-components = new Map
-componentIdentities = fast.clone(require './primes').reverse()
+identities = fast.clone(require './primes').reverse()
 
-Component = (name, opts) ->
+fieldsRx = /(?:^|\s)([a-z][a-z0-9]+(?=\s|$))/gi
+identityRx = /(?:^|\s)#([0-9]+(?=\s|$))/i
+
+Component = (name, definition) ->
 	verifyName name
 
-	return ComponentType if ComponentType = components.get name
-
-	# Extract fields and identity from options object
-	if opts and _.isPlainObject opts
-		fields = verifyFields opts.fields
-		identity = verifyIdentity opts.identity
-
-	# Otherwise treat argument as fields and grab next available identity
-	else
-		fields = verifyFields opts
-		identity = componentIdentities.pop()
+	{fields, identity} = parseDefinition definition
 
 	componentPool = []
 
@@ -35,12 +29,12 @@ Component = (name, opts) ->
 	for field, i in fields
 		Object.defineProperty componentPrototype, field, createDataProperty(i)
 
-	ComponentType = ->
-		if componentPool.length
+	ComponentType = (data) ->
+		if not data and componentPool.length
 			component = componentPool.pop()
 		else
 			component = Object.create componentPrototype
-			initializeData component, fields
+			initializeData component, fields, data
 		return component
 
 	ComponentType[ bPool ] = componentPool
@@ -54,8 +48,37 @@ Component = (name, opts) ->
 	componentPrototype[ symbols.bType ] = ComponentType
 	componentPrototype[ symbols.bChanged ] = 0
 
-	components.set name, ComponentType
 	return Object.freeze ComponentType
+
+verifyName = (name) ->
+	unless _.isString name
+		throw new TypeError 'missing name of the component'
+
+emptyFields = Object.freeze []
+
+parseDefinition = (definition) ->
+	unless definition?
+		return fields: emptyFields, identity: identities.pop()
+
+	if definition? and not _.isString definition
+		throw new TypeError 'optionally expected string in second argument'
+
+	fields = []
+
+	while match = fieldsRx.exec definition
+		fields.push field unless ~(fast.indexOf fields, field = match[1])
+
+	Object.freeze fields
+
+	if identityMatch = definition.match identityRx
+		identity = Number identityMatch[1]
+		unless ~(idx = fast.indexOf identities, identity)
+			throw new Error 'invalid identity specified for component: '+identity
+		identities.splice idx, 1
+	else
+		identity = identities.pop()
+
+	return {fields, identity}
 
 Component.disposed = NoMe ->
 	return unless data = this[ bData ]
@@ -77,37 +100,17 @@ createDataProperty = (i) ->
 		this[ symbols.bChanged ] = Date.now()
 		this[ bData ][i] = val
 
-initializeData = (component, fields) ->
+initializeData = (component, fields, data) ->
 	return unless fields.length
-	component[ bData ] = new Array(fields.length)
-
-verifyName = (name) ->
-	unless _.isString name
-		throw new TypeError 'missing name of the component'
-
-emptyFields = Object.freeze new Array(0)
-
-reduceField = (fields, field) ->
-	return fields unless _.isString(field)
-	fields.push field
-	return fields
-
-verifyFields = (fields) ->
-	return emptyFields unless fields
-	unless _.isArray(fields) and (result = fast.reduce _.uniq(fields), reduceField, []).length
-		throw new TypeError 'invalid fields specified for component: '+fields
-	return result
-
-verifyIdentity = (identity) ->
-	identity = Number(identity)
-	unless ~(idx = fast.indexOf componentIdentities, identity)
-		throw new Error 'invalid identity used for component: '+identity
-	componentIdentities.splice idx, 1
-	return identity
+	if data and _.isArray data
+		data.length = fields.length
+		component[ bData ] = data
+	else
+		component[ bData ] = new Array(fields.length)
+	return
 
 if process.env.NODE_ENV is 'test'
-	Component.map = components
-	Component.identities = componentIdentities
+	Component.identities = identities
 
 Object.freeze basePrototype
 module.exports = Object.freeze Component

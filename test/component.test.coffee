@@ -4,10 +4,17 @@ symbols = require '../src/symbols'
 
 describe 'Component', ->
 
-	afterEach ->
-		Component.map.clear()
-		Component.identities.length = 0
-		Component.identities.push.apply Component.identities, [23, 19, 17, 13, 11, 7, 5, 3, 2]
+	before ->
+		@validFields = 'test1 test2 test3'
+		@fieldsArray = @validFields.split ' '
+		@validName = 'name'
+		@resetIdentities = ->
+			debugger
+			Component.identities.length = 0
+			Component.identities.push.apply Component.identities, [23, 19, 17, 13, 11, 7, 5, 3, 2]
+
+	beforeEach ->
+		@resetIdentities()
 
 	it 'should be a function', ->
 		expect(Component).to.be.a "function"
@@ -21,83 +28,86 @@ describe 'Component', ->
 		toThrow 'bool', -> Component true
 		toThrow 'array', -> Component []
 		toThrow 'object', -> Component {}
+		toThrow 'function', -> Component new Function
 
-	it 'should return same value for identical name', ->
-		expected = Component 'name'
-		expect(Component 'name').to.equal expected
-
-	it 'optionally expects array of strings passed in second argument', ->
+	it 'optionally expects string passed in second argument', ->
 		toThrow = (msg, fn) ->
-			expect(fn).to.throw TypeError, /invalid fields/, msg
+			expect(fn).to.throw TypeError, /expected string/, msg
 		toThrow 'number', -> Component 'number', 1
-		toThrow 'bool', -> Component 'bool', true
-		toThrow 'string', -> Component 'string', 'nothing'
-		toThrow 'empty array', -> Component 'empty array', []
-		toThrow 'num array', -> Component 'num array', [1]
-		toThrow 'bool array', -> Component 'bool array', [true]
+		toThrow 'bool', -> Component 'bool', false
+		toThrow 'array', -> Component 'array', []
+		toThrow 'object', -> Component 'object', {}
+		toThrow 'function', -> Component 'function', new Function
 
 	it 'should return a component type function', ->
-		expect(Component 'factory').to.be.a "function"
+		expect(Component 'name').to.be.a "function"
 
-	beforeEach ->
-		@fields = ['test1', 'test2', 'test3']
+	it 'should return a new function for every call', ->
+		expected = Component 'name'
+		actual = Component 'name'
+		expect(actual).to.not.equal expected
 
 	describe 'type', ->
 
-		it 'should forbid to add custom properties to itself', ->
-			cComponent = Component 'forbid'
-			cComponent.customProperty
+		it 'forbids to add custom properties to itself', ->
+			cComponent = Component @validName, @validFields
+			cComponent.customProperty = true
 			expect(cComponent).to.not.have.property "customProperty"
 
-		it 'should provide name of component in @@name', ->
-			cComponent = Component name = 'withname'
-			expect(cComponent[ symbols.bName ]).to.equal name
+		it 'should provide name of component type in read-only @@name property', ->
+			cComponent = Component @validName, @validFields
+			cComponent[ symbols.bName ] = "fakeName"
+			expect(cComponent[ symbols.bName ]).to.equal @validName
 
-		it 'should set @@identity property to unique prime number', ->
-			cComponent = Component 'genIdentity'
+		it 'should provide defined fields as array in read-only @@fields property', ->
+			check = (input, output) ->
+				comp = Component 'name', input
+				comp[ symbols.bFields ] = false
+				expect(comp[ symbols.bFields ]).to.eql output
+
+			check @validFields, @fieldsArray
+			check 'MoreSpace  2Tab		gAmA   #nope $not aaa-bbb', ['MoreSpace', 'gAmA']
+			check 'duplicate duplicate duplicate', ['duplicate']
+
+		it 'should provide identity number as prime number in read-only @@identity property', ->
+			cComponent = Component @validName, @validFields
 			expect(expected = cComponent[ symbols.bIdentity ]).to.be.a "Number"
 			primes = require '../src/primes'
 			expect(~primes.indexOf expected).not.to.equal 0
-			cComponent2 = Component 'genIdentity2'
+			cComponent2 = Component @validName
 			expect(cComponent2[ symbols.bIdentity ]).to.not.equal expected
 
-		it 'can set identity from options object', ->
-			cComponent = Component 'withIdentity', identity: expected = 23
-			expect(cComponent[ symbols.bIdentity ]).to.equal expected
+		it 'uses identity number #23 from fields definition', ->
+			check = (input) =>
+				cComponent = Component @validName, input
+				expect(cComponent[ symbols.bIdentity ]).to.equal 23
+				@resetIdentities()
+
+			check @validFields + ' #23'
+			check '#23 ' + @validFields
+			check 'test #23 #2 test2'
 
 		it 'forbids to use identity that is a not prime number', ->
-			fn = -> Component 'failIdentity', identity: 8
+			fn = -> Component 'failIdentity', '#8'
 			expect(fn).to.throw Error, /invalid identity/
 
 		it 'forbids to use identity that is already taken', ->
-			Component 'test'
-			fn = -> Component 'usedIdentity', identity: 2
+			Component 'given2'
+			fn = -> Component 'specified2', '#2'
 			expect(fn).to.throw Error, /invalid identity/
 
-		it 'assigns next free identity for the following component', ->
-			Component 'test', identity: 2
-			expected = Component 'test2'
-			expect(expected[ symbols.bIdentity ]).to.equal 3
-
-		it 'should provide list of defined fields in @@fields', ->
-			cComponent = Component 'withfields', @fields
-			expect(cComponent[ symbols.bFields ]).to.eql @fields
-
-		it 'should filter out duplicate fields', ->
-			cComponent = Component 'duplicates', ['dupe', 'dupe']
-			expect(cComponent[ symbols.bFields ]).to.eql ['dupe']
-
-		it 'should filter out non-string fields', ->
-			cComponent = Component 'mess', ['good', 1, true, {}]
-			expect(cComponent[ symbols.bFields ]).to.eql ['good']
+		it 'assigns next free identity to the following component', ->
+			Component 'specified5', '#5'
+			cExpected = Component 'expected2'
+			expect(cExpected[ symbols.bIdentity ]).to.equal 2
 
 		it 'should expose list of defined properties when calling toString()', ->
-			cComponent = Component 'toString', @fields
+			cComponent = Component @validName, @validFields
 			stringified = cComponent.toString()
-			for field in @fields
+			for field in @fieldsArray
 				expect(stringified).to.contain field
 
-		it 'should return new object upon calling', ->
+		it 'should return component instance upon calling', ->
 			cComponent = Component 'instance'
 			expected = do cComponent
 			expect(expected).to.be.an 'object'
@@ -106,18 +116,19 @@ describe 'Component', ->
 	describe 'instance', ->
 
 		beforeEach ->
-			@cComponent = Component 'test', @fields
+			@cComponent = Component @validName, @validFields
 			@component = do @cComponent
 
-		it 'should have a factory function stored in @@type', ->
-			expect(@component[symbols.bType]).to.eql @cComponent
+		it 'should provide component type function in read-only @@type property', ->
+			@component = do @cComponent
+			expect(@component[ symbols.bType ]).to.equal @cComponent
 
-		it 'should have properties defined by fields argument', ->
-			for field in @fields
+		it 'should provide properties defined by fields definition', ->
+			for field in @fieldsArray
 				expect(@component).to.have.property field
 
 		it 'should allow to set and get defined property value', ->
-			for field, i in @fields
+			for field, i in @fieldsArray
 				@component[field] = i
 				expect(@component[field]).to.equal i
 
@@ -129,11 +140,23 @@ describe 'Component', ->
 			expect(component2.test1).to.equal 20
 
 		it 'should keep values intact when not defined property is set', ->
-			for field, i in @fields
+			for field, i in @fieldsArray
 				@component[field] = i
 			@component.nothing = true
-			for field, i in @fields
+			for field, i in @fieldsArray
 				expect(@component[field]).to.equal i
+
+		it 'should set values based on array passed into function', ->
+			component = @cComponent [10, 20, 30]
+			expect(component.test1).to.equal 10
+			expect(component.test2).to.equal 20
+			expect(component.test3).to.equal 30
+
+		it 'should keep values undefined when passed array is shorter', ->
+			component = @cComponent [10, 20]
+			expect(component.test1).to.equal 10
+			expect(component.test2).to.equal 20
+			expect(component.test3).to.not.be.ok
 
 		describe '@@changed', ->
 

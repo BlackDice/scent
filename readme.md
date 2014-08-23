@@ -10,6 +10,16 @@ Main idea of this approach is [composition over inheritance](http://en.wikipedia
 
 Please note that this is far from complete solution of *how to make the game*. This is only small piece of the whole cake that needs to be used in much more robust environment to handle all game requirements. Possibly it is something that most of games have in common no matter of genre.
 
+Framework is being actively used in development of our game. It will be improved and changed over time as need arise. Check out the [contributing file](contributing.md) if you want to help with something.
+
+## Installation and basic usage
+
+Framework is available from NPM (`npm install -S scent`) and Bower (`bower install -S scent`). Simply run any of these and you are set to go.
+
+We are using CommonJS modules. You can use these in NodeJS and also in browser with the help of Browserify. To access any parts of framework simply make call like the following.
+
+	{Component, Entity, Node, System, Engine, Symbols} = require 'scent'
+
 ## Terminology
 
 Overview of the parts of the framework.
@@ -31,63 +41,85 @@ There is notation for variables holding known types defined by this framework. A
 	cWeapon      component type
 	eCharacter   entity instance
 	nStructure   node type
-	sInput       system initializer
 	bName        symbol reference
 
 ### No classes
 
-Scent is completely class-less framework. There is no inheritance of any framework part as it's not needed. **Do not use** `new` keyword when using the framework functions. It will not change it's behavior in any way, but internally you will be creating object that is thrown away. For performance reasons there are no checks if you have used `new` keyword.
+Scent is completely class-less framework. There is no inheritance of any framework part. **Do not use** `new` keyword when using the framework functions. It will not change it's behavior in any way, but internally you will be creating object that is thrown away. For performance reasons there are no checks if you have used `new` keyword.
 
 ### Error handling
 
-There are some checks for correct type or format of arguments that can throw error. Basically you don't need to handle these errors because they are meant to alert you about doing something seriously wrong.
+There are some checks for correct type or format of arguments that can throw error. Basically you don't need to handle these errors because they are meant to alert you about doing something seriously wrong mostly in the setup phase.
 
-There are no errors thrown during runtime. Instead the [debug](https://www.npmjs.org/package/debug) module is used with prefix of "scent:" that warns you about runtime issues.
+There is minimum of runtime errors (except unexpected ones). Instead the [debug](https://www.npmjs.org/package/debug) module is used with prefix of "scent:" that warns you about runtime issues.
 
 ### EcmaScript 6 support
 
-Framework is using some of the features as defined by EcmaScript6 draft. Since the implementation in current environments are not really production ready, framework is using shims. All used features are exported in `es6-support` file to easily allow replacement by another implementation.
+Framework is using some of the features as defined by EcmaScript 6 draft. Since the implementation in current environments are not really production ready, we are using shims. All used features are exported in `src/es6-support` file to easily allow replacement by another shim implementation if needed.
 
 #### Symbol usage
 
-To avoid collisions in some variable names and also to store truly private states, framework is using Symbol structure. All public symbols are accessible from `symbols.coffee` file. You can use these to get required values.
+To avoid collisions in some variable names and also to store truly private states, framework is using the **Symbol** structure. All public symbols are accessible from Symbols exported variable of Scent entry point (see above).
 
-Acknowledged notation exists for the symbols, it uses `@@` as prefix. Anytime when we are using this prefix be aware you have to use the symbol of that name from mentioned file. Note that variable names in the files are conforming to the mentioned notations too.
+Acknowledged notation exists for the symbols, it uses `@@` as prefix. Anytime when we are using this prefix be aware you have to use the symbol of that name from mentioned file.
 
 ## How it works
 
-Basically you should define some *components* and add created instances of them to different *entities* while setting required data. Then you can let *systems* do their job with tremendous help of *nodes*. In the end, everything is nicely wrapped in the *engine*.
+Basically you should define some *component types*, created instances of them, set data and add them to different *entities*. Then you can let *systems* do their job with tremendous help of *nodes*. In the end, everything is nicely wrapped by the *engine*.
 
 ### Defining the component
 
-This is usually the first step in the design of the game structure. To be able to do anything you need some place to store data. That's the role of the component. However before you can store some data in there, it's necessary to define component and designate what properties you want to manage in the component.
+This is usually the first step in the design of the game structure. To be able to do anything you need some **place to store data**. That's the role of the component. However before you can store some data in there, it's necessary to define component type and designate what properties you want to manage in there.
 
-	cBuilding = Component 'building', ['floors', 'height', 'roofType']
+	cBuilding = Component 'building', 'floors height roofType'
 
-First argument is the name of the component. It helps to identify what are you currently looking at and also to automate some other tasks. The resulting variable `cBuilding` is a **component type** and is used to create component instance that can actually hold the data.
+ * First argument is the name of the component. It helps to identify what are you currently looking at and also to automate some other tasks (see Node below).
+
+ * Second argument is optional and contains list of properties you want to define for a component type.
+
+   - Property name has to start with letter and be composed of alphanumeric characters only.
+   - Properties with non-alphanumeric characters are completely omitted.
+   - Any whitespace characters are used as delimiter.
+   - Duplicates are automatically removed.
+
+The resulting variable `cBuilding` is a **component type** and by invoking it you can create component instance that can actually hold the data. You might also need this type to do some checks (eg. entity methods, see below).
+
+#### Keep component type
+
+Created component type is **not stored anywhere**. Upon invoking the function with same component name you would be getting different object. This is merely to prevent the *global* behavior of the component which may cause some unwanted issues.
 
 #### Marker component
 
-You can completely omit list of properties and effectively creating component called **marker**. Name for these component should start with some word expressing state, like 'has' or 'is', but it's not enforced in any way.
+You can completely omit list of properties and effectively create component type called **marker**. Name for marker components should start with some word expressing state, like 'has' or 'is', but it's not enforced in any way.
 
 	cHasRoof = Component 'hasRoof'
 	cIsBulletproof = Component 'isBulletproof'
 
+#### Identity number
+
+Each component type is assigned identity number upon creation. It is mainly used to easily identify group of component types (eg. by Node). You can also use it for some kind of storage mechanism since name of component type doesn't need to be unique.
+
+Identity number is retrieved from internal list of prime numbers, currently ending at number 7919. That's exactly 1000 component types available to use. If there is ever need for more component types, we might consider some more robust solution. For now this is pre-generated list for performance reasons.
+
+The list is global, so any subsequent calls to Component function will grab the next number from the list and block it for that component type.
+
+##### Overwriting identity
+
+For more complex architecture you might want to need specify identity of component type by yourself. If you try to pass in number that is already taken or not present in the internal list, error will be thrown.
+
+	cPerson = 'person', '#677 head torso limbs'
+	cPerson[ Symbols.bIdentity ] === 677
+
+Simply prefix your identity number with `#`. It can be anywhere in properties list. You can specify only single identity. First occurrence of the pattern is taken into account, any subsequent is ignored.
+
 #### Exposed properties
 
-Component type exposes some symbols. You might be interested in @@name to get the actual name of component you have passed in first argument.
+Component type exposes some properties using symbols.
 
-There is also property `@@identity` that contains numeric identifier of component type. It is based on prime numbers so it's basically unique if handled correctly.
-
-Another useful property is `@@changed` which contains timestamp (from `Date.now()` call) of the last change in component data. If no change occurred, there will be 0.
-
-Lastly there is property @@fields containing array of property names you have requested, filtered out for duplicates and non-string ones.
-
-#### Overwriting identity
-
-For more complex architecture where you depend on identity of components to be same over all different layers it might be useful to pass in identity number when creating component type. Otherwise one is picked from available list. Keep in mind that error will be thrown if you try to pass in not a prime number or the one that is already taken.
-
-	cSpecialComponent = 'special', identity: 677, fields: ['extra']
+ * *@@name* is actual name of component you have passed in first argument.
+ * *@@fields* is array of parsed property names from the second argument filtered out for duplicates. You cannot change component definition by changing this.
+ * *@@identity* contains numeric identifier of component type based on prime numbers (see above).
+ * *@@changed* is timestamp (from `Date.now()` call) of the last change in component data. If no change occurred, there will be 0.
 
 ### Working with components
 
@@ -97,14 +129,22 @@ Once you have component defined, it's very easy to create instance of it and sta
 	building.floors = 5
 	building.height = 10
 
-Factory function doesn't accepts any parameters. All values have to be set explicitly like shown. You don't need to set all properties and you cannot set properties you haven't defined for the component. Those will be silently ignored and thrown away.
+Data in the component should be set explicitly like shown. You don't need to set all properties and you cannot set properties you haven't defined for the component type. Those will be silently ignored and thrown away.
 
-*Note that components are not classes thus avoid using keyword `new` in front of factory function. It doesn't change its behavior, but causes unused object to be created.*
+There is another supported way of defining data for a component. This is intended for serialization mechanics more than general usage as it is quite confusing to read and you can easily make a mistake. Following gives the same result as above example.
 
-When you are done working with the component and it's not needed anymore, you should call its `@@dispose` method. This will free up any internal resources and destroy values. You should also get rid of any possible references that could hold that component (depends on situation).
+	building = cBuilding [5, 10]
+
+Note that passed array is kept for the further usage. Be warned that keeping reference to it may cause unexpected issues. If you want to keep around those data, you better make a clone from it.
+
+### Dispose component
+
+When you are done working with the component and it's not needed anymore, you should call its `@@dispose` method. This will free up any internal resources and destroy values.
 
 	do building[ @@dispose ]
 	building = null
+
+Disposed component is stored in internal pool and will be used again when component of the same type is created again. For that reason you should not hold component reference anywhere if you plan to dispose it later.
 
 ### Entity as component collection
 
@@ -114,11 +154,11 @@ Components needs some space to live in. You might also want to tie together more
 
 #### Adding components
 
-That's all that needs to be done. Lets `add` some component in there. Simply pass in the instance of component. You can call `add` method as many times as you want/need.
+Entity without components is just empty meaningless shell. Lets `add` some component in there. Simply pass in the instance of component. You can call `add` method as many times as you want.
 
 	entity.add building
 
-Keep in mind, that adding component of the same type replaces existing one inside the entity. In cases where you want to do that, use `replace` method which doesn't produce warning message. It's for the semantics purposes so it's clear from the code, that component is supposed to be replaced.
+Keep in mind, that adding component of the same type **replaces existing one** inside the entity. In cases where you want to do that, use `replace` method which doesn't produce warning message. It's for the semantics purposes so it's clear from the code, that component is supposed to be replaced.
 
 	entity.replace building
 
@@ -128,25 +168,30 @@ You can also add components in batch during the entity creation. Simply pass the
 
 #### Retrieving components
 
-For the following methods you need to have access to original factory function of the component as it declares the type of component. First you might want to check if component is part of the entity using `has`. It returns boolean value.
+For the following methods you need to have access to component type as it declares the type of component. First you might want to check if component is part of the entity using `has`. It returns boolean value.
 
 	entityIsBuilding = entity.has cBuilding
 
-To retrieve component object itself you can use `get` method. It will return `null` if component of that type is not present in the entity.
+To retrieve component instance itself you can use `get` method. It will return `null` if component of that type is not present in the entity.
 
 	building = entity.get cBuilding
 
-Avoid calling `has` followed by `get`. For performance purposes use the following approach.
-
-	if building = entity.get cBuilding
-		building.floors += 1
-
 #### Removing components
 
-And finally there is `remove` method to unchain the component from the entity. Note that by default the `@@dispose` method of the component will be called upon removal from entity. If you want to prevent that, simply pass the `false` value as the second argument. Use this sparingly to avoid memory leaks.
+Call `remove` method to unchain the component instance from entity.
 
-	entity.remove cBuilding # calls building[ @@dispose ]
+	entity.remove cBuilding
+
+If you don't have component type at your disposal, you can manage by following approach.
+
+	entity.remove building[ @@type ]
+	do building[ @@dispose ]
+
+As you may have suspected, calling dispose is a bit more destructive. In general the outcome is same, because `remove` call makes the `@@dispose` call too. If you want for some reason to prevent that, simply pass the `false` value as the second argument. Use this sparingly to avoid memory leaks and confusion.
+
 	entity.remove cBuilding, false
+
+#### Chaining commands
 
 Methods `add`, `replace` and `remove` returns entity object itself. You can use it to chain the commands if you like.
 
@@ -162,18 +207,15 @@ When you don't need whole entity any more, you can remove it from the game simpl
 
 #### Change notifications
 
-Entity object exposes couple of methods monitored with [NoMe](https://github.com/BlackDice/nome). It's highly discouraged to invoke these methods directly as you would be skipping some of the required checks. You can attach to these to get notified about changes. Names of methods are self explanatory.
-
-	Entity.componentAdded
-	Entity.componentRemoved
-	Entity.disposed
+Entity object exposes couple of methods monitored with [NoMe](https://github.com/BlackDice/nome). You can attach to these to get notified about changes. Names of methods are self explanatory. All attached callbacks are invoked in the context of entity instance.
 
 	Entity.componentAdded.notify (component) ->
-		# context is entity instance
+	Entity.componentRemoved.notify (component) ->
+	Entity.disposed.notify -> entity = this
 
-#### Timestamp change
+#### Timestamp of change
 
-As components have `@@changed` property, this is propagated to the entity too. It gets updated whenever any component owned by entity is changed. It is also updated when any component is added or removed from entity. Empty entity without component will have timestamp of 0.
+As components have `@@changed` property, this is propagated to the entity too. It contains the most latest timestamp of the change. It is also updated when any component is added or removed from entity. Empty entity without component will have timestamp of 0.
 
 ### Swimming in big entity pool
 
@@ -389,4 +431,18 @@ If you specify function, it will be called every time when some system asks for 
 
 #### Multiple engines?
 
-Technically you can created multiple engine instances, but there is currently no way how to add created entity to the engine. All entities and node types are private to that engine. This is the current limitation of the implementation. If the need for multiple engines arises in future, we might implement it.
+Technically you can create multiple engine instances, but there is currently no way how to add created entity to the engine. All entities and node types are private to single engine. This is the current limitation of the implementation and it meant to be this way. If the need for multiple engines arises in future, we might implement it.
+
+## Advertisement
+
+Are you are interested in game development? Would you like to beat some challenges while participating on development of interesting and innovative WebGL multi-player game?
+
+We require passion for game development and honest people, eg. don't make excuses about time if you don't want to really participate. You should have some knowledge of Javascript and web technologies in general. Knowing HTML + CSS isn't going to help you much here. You should be able to communicate in english or czech language.
+
+We are small growing company filled with talented and friendly people. We are not dreamers, it's hard area of business, but we are determined to make this happen. Hop on the board and drop us mail *info (at) mrammor.com*.
+
+## Tests
+
+To have a look at tests outcome, you have to install node dependencies first (using `npm install`) and then you can simply run `npm test` to see the test outcome.
+
+For development we are using amazing Test'em tool. Just install it globally (`npm install -g testem`) and then run in this directory (`testem`). Tests will run in Node environment by default and you can connect with any browser to see how the framework behaves in there.

@@ -2,7 +2,8 @@
 Engine = require '../src/engine'
 symbols = require '../src/symbols'
 
-nome = require 'nome'
+NoMe = require 'nome'
+Lill = require 'lill'
 
 describe 'Engine', ->
 
@@ -15,7 +16,7 @@ describe 'Engine', ->
         expect(Engine).to.be.a "function"
 
     it 'expects optional function initializer at first argument', ->
-        toThrow = (msg, fn) -> 
+        toThrow = (msg, fn) ->
             expect(fn).to.throw TypeError, /expected function/, msg
         toThrow 'string', -> Engine 'str'
         toThrow 'number', -> Engine 1
@@ -92,6 +93,26 @@ describe 'Engine', ->
             expect(entity.get @cBetaComponent).to.equal beta2
             do entity[ symbols.bDispose ]
 
+    describe 'instance.entityList', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be an object attached by Lill', ->
+            expect(@engine.entityList).to.be.an "object"
+            expect(Lill.isAttached @engine.entityList).to.be.true
+
+        it 'contains all added entities', ->
+            entity1 = @engine.addEntity()
+            entity2 = @engine.addEntity()
+            expect(Lill.has @engine.entityList, entity1).to.be.true
+            expect(Lill.has @engine.entityList, entity2).to.be.true
+
+        it 'removes disposed entities', ->
+            entity = @engine.addEntity()
+            do entity[ symbols.bDispose ]
+            expect(Lill.has @engine.entityList, entity).to.be.false
+
     describe 'instance.addSystem()', ->
 
         beforeEach ->
@@ -102,7 +123,7 @@ describe 'Engine', ->
 
         it 'expects function at first argument', ->
             engine = @engine
-            toThrow = (msg, fn) -> 
+            toThrow = (msg, fn) ->
                 expect(fn).to.throw TypeError, /expected function/, msg
             toThrow 'string', -> engine.addSystem 'str'
             toThrow 'number', -> engine.addSystem 1
@@ -142,7 +163,7 @@ describe 'Engine', ->
 
         it 'expects array of system initializers at first argument', ->
             engine = @engine
-            toThrow = (msg, fn) -> 
+            toThrow = (msg, fn) ->
                 expect(fn).to.throw TypeError, /expected array/, msg
             toThrow 'void', -> engine.addSystems()
             toThrow 'null', -> engine.addSystems null
@@ -173,7 +194,7 @@ describe 'Engine', ->
 
         it 'expects optional callback at first argument', ->
             start = @engine.start
-            toThrow = (msg, fn) -> 
+            toThrow = (msg, fn) ->
                 expect(fn).to.throw TypeError, /expected callback/, msg
             toThrow 'string', -> start 'str'
             toThrow 'number', -> start 1
@@ -243,10 +264,10 @@ describe 'Engine', ->
             expect(@engine).to.respondTo 'update'
 
         it 'should be wrapped by NoMe', ->
-            expect(nome.is @engine.update).to.be.true
+            expect(NoMe.is @engine.update).to.be.true
 
         it 'exposes notify method as onUpdate', ->
-            expect(@engine.onUpdate).to.equal @engine.update[ nome.bNotify ]
+            expect(@engine.onUpdate).to.equal @engine.update[ NoMe.bNotify ]
 
         it 'adds created entity to compatible nodes', ->
             expect(@nAlphaNode.size).to.equal 0
@@ -285,7 +306,7 @@ describe 'Engine', ->
             toThrow = (msg, value) ->
                 Engine (engine, provide) ->
                     expect(-> provide value).to.throw TypeError, /expected injection name/, msg
-            toThrow 'empty string', ''  
+            toThrow 'empty string', ''
             toThrow 'number', 1
             toThrow 'bool', true
             toThrow 'false', false
@@ -336,7 +357,7 @@ describe 'Engine', ->
 
         it 'injects values returned from injection function', ->
             engine = Engine (engine, provide) ->
-                provide 'dyn', (engine, systemInitializer) -> 
+                provide 'dyn', (engine, systemInitializer) ->
                     return systemInitializer[ symbols.bName ]
             engine.addSystem mockSystem 'expected', (dyn) ->
                 expect(dyn).to.equal 'expected'
