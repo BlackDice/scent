@@ -2,16 +2,9 @@
 
 var fs         = require('fs');
 var path       = require('path');
-var uglifyjs   = require('uglify-js');
 var banner     = fs.readFileSync(__dirname + '/../LICENSE').toString()
-var src        = __dirname + '/../src/scent.coffee';
-
-function minify(source) {
-  var opts = { fromString: true, mangle: {
-    toplevel: true
-  }};
-  return uglifyjs.minify(source, opts).code;
-}
+var src        = __dirname + '/../src';
+var lib        = __dirname + '/../lib';
 
 var bannerLines = banner.split("\n");
 for (var i = 0, ii = bannerLines.length; i < ii; i++) {
@@ -22,11 +15,13 @@ bannerLines.push("*/", "");
 banner = bannerLines.join("\n");
 
 var coffee = require('coffee-script');
-var compiled = coffee.compile(fs.readFileSync(src).toString(), {
-  bare: true
-});
+function compile(file) {
+	var compiled = coffee.compile(fs.readFileSync(src + '/' + file).toString(), {
+  		bare: true
+	});
+	var out = lib + '/' + file.replace('.coffee', '.js')
+	fs.writeFileSync(out, compiled);
+	console.log("written file "+out);
+}
 
-var minified = minify(compiled);
-
-fs.writeFileSync(__dirname + '/../lib/scent.js', banner + compiled);
-fs.writeFileSync(__dirname + '/../lib/scent.min.js', banner + minified);
+fs.readdirSync(src).forEach(compile);

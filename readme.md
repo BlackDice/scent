@@ -10,7 +10,11 @@ Main idea of this approach is [composition over inheritance](http://en.wikipedia
 
 Please note that this is far from complete solution of *how to make the game*. This is only small piece of the whole cake that needs to be used in much more robust environment to handle all game requirements. Possibly it is something that most of games have in common no matter of genre.
 
+### In development
+
 Framework is being actively used in development of our game. It will be improved and changed over time as need arise. Check out the [contributing file](contributing.md) if you want to help with something.
+
+There is no Roadmap for the framework yet, it mostly depends on ours needs in the game. One essential feature is still missing compared to Ash - Finite State Machine. This will be implemented for sure in relatively short time frame.
 
 ## Installation and basic usage
 
