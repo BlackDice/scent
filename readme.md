@@ -88,9 +88,9 @@ This is usually the first step in the design of the game structure. To be able t
 
 The resulting variable `cBuilding` is a **component type** and by invoking it you can create component instance that can actually hold the data. You might also need this type to do some checks (eg. entity methods, see below).
 
-#### Keep component type
+#### Save component type
 
-Created component type is **not stored anywhere**. Upon invoking the function with same component name you would be getting different object. This is merely to prevent the *global* behavior of the component which may cause some unwanted issues.
+Created component type is **not stored anywhere**. Upon invoking the function with same component name you would be getting different object. This is merely to prevent the *global* behavior of the Component avoiding some unwanted issues in more complex game systems.
 
 #### Marker component
 
@@ -125,7 +125,7 @@ Component type exposes some properties using symbols.
  * *@@identity* contains numeric identifier of component type based on prime numbers (see above).
  * *@@changed* is timestamp (from `Date.now()` call) of the last change in component data. If no change occurred, there will be 0.
 
-### Working with components
+#### Working with components
 
 Once you have component defined, it's very easy to create instance of it and start using it. Let's use the `cBuilding` component from previous example.
 
@@ -141,7 +141,7 @@ There is another supported way of defining data for a component. This is intende
 
 Note that passed array is kept for the further usage. Be warned that keeping reference to it may cause unexpected issues. If you want to keep around those data, you better make a clone from it.
 
-### Dispose component
+#### Dispose component
 
 When you are done working with the component and it's not needed anymore, you should call its `@@dispose` method. This will free up any internal resources and destroy values.
 
@@ -149,6 +149,16 @@ When you are done working with the component and it's not needed anymore, you sh
 	building = null
 
 Disposed component is stored in internal pool and will be used again when component of the same type is created again. For that reason you should not hold component reference anywhere if you plan to dispose it later.
+
+#### Validating types
+
+This might come in handy in some runtime situations, but it's probably more useful in unit tests. Take this feature as experimental. It can be removed in future if we decide that its cost overweights its usefulness.
+
+	(cBuilding instanceOf Component) is true
+	(Component.prototype.isPrototypeOf cBuilding) is true
+
+	(building instanceOf cBuilding) is true
+	(cBuilding.prototype.isPrototypeOf building) is true
 
 ### Entity as component collection
 

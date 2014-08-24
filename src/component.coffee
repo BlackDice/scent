@@ -35,6 +35,7 @@ Component = (name, definition) ->
 		else
 			component = Object.create componentPrototype
 			initializeData component, fields, data
+			Object.setPrototypeOf component, ComponentType.prototype
 		return component
 
 	ComponentType[ bPool ] = componentPool
@@ -48,7 +49,11 @@ Component = (name, definition) ->
 	componentPrototype[ symbols.bType ] = ComponentType
 	componentPrototype[ symbols.bChanged ] = 0
 
+	ComponentType.prototype = componentPrototype
+	Object.setPrototypeOf ComponentType, Component.prototype
 	return Object.freeze ComponentType
+
+Component.prototype = Object.create Function.prototype
 
 verifyName = (name) ->
 	unless _.isString name

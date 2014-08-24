@@ -49,6 +49,12 @@ describe 'Component', ->
 
 	describe 'type', ->
 
+		it 'passes the `instanceof` check toward the Component function', ->
+			expect(Component @validName).to.be.an.instanceof Component
+
+		it 'passes `Component.prototype.isPrototypeOf` check', ->
+			expect(Component.prototype.isPrototypeOf Component @validName).to.be.true
+
 		it 'forbids to add custom properties to itself', ->
 			cComponent = Component @validName, @validFields
 			cComponent.customProperty = true
@@ -118,6 +124,12 @@ describe 'Component', ->
 		beforeEach ->
 			@cComponent = Component @validName, @validFields
 			@component = do @cComponent
+
+		it 'passes the `instanceof` check toward the defined type function', ->
+			expect(@component).to.be.an.instanceof @cComponent
+
+		it 'passes `cComponent.prototype.isPrototypeOf` check', ->
+			expect(@cComponent.prototype.isPrototypeOf @component).to.be.true
 
 		it 'should provide component type function in read-only @@type property', ->
 			@component = do @cComponent
