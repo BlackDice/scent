@@ -187,6 +187,10 @@ Engine = (initializer) ->
 		initializer.call null, engine, provide
 		initializer = null
 
+	Object.setPrototypeOf engine, Engine.prototype
 	return Object.freeze engine
+
+Engine.prototype = Object.create Function.prototype
+Engine.prototype.toString = -> "Engine (#{Lill.getSize this.entityList} entities)"
 
 module.exports = Object.freeze Engine

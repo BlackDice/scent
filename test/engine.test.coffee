@@ -32,7 +32,7 @@ describe 'Engine', ->
         do actual[ symbols.bDispose ]
 
     it 'invokes function passed in first argument with extensible engine instance', ->
-        engine = Engine spy = sinon.spy()
+        engine = Engine (spy = sinon.spy())
         expect(spy).to.have.been
             .calledOnce
             .calledOn(null)
@@ -44,6 +44,12 @@ describe 'Engine', ->
 
     afterEach ->
         do @engine?[ symbols.bDispose ]
+
+    it 'instance passes the `instanceof`', ->
+        expect(Engine @validName).to.be.an.instanceof Engine
+
+    it 'passes `Engine.prototype.isPrototypeOf` check', ->
+        expect(Engine.prototype.isPrototypeOf Engine @validName).to.be.true
 
     describe 'instance.getNodeType()', ->
 

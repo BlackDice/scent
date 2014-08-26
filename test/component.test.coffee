@@ -9,7 +9,6 @@ describe 'Component', ->
 		@fieldsArray = @validFields.split ' '
 		@validName = 'name'
 		@resetIdentities = ->
-			debugger
 			Component.identities.length = 0
 			Component.identities.push.apply Component.identities, [23, 19, 17, 13, 11, 7, 5, 3, 2]
 
@@ -38,6 +37,8 @@ describe 'Component', ->
 		toThrow 'array', -> Component 'array', []
 		toThrow 'object', -> Component 'object', {}
 		toThrow 'function', -> Component 'function', new Function
+
+		expect(-> Component 'null', null).to.not.throw
 
 	it 'should return a component type function', ->
 		expect(Component 'name').to.be.a "function"
