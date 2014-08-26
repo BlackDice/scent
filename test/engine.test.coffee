@@ -46,10 +46,10 @@ describe 'Engine', ->
         do @engine?[ symbols.bDispose ]
 
     it 'instance passes the `instanceof`', ->
-        expect(Engine @validName).to.be.an.instanceof Engine
+        expect(Engine()).to.be.an.instanceof Engine
 
     it 'passes `Engine.prototype.isPrototypeOf` check', ->
-        expect(Engine.prototype.isPrototypeOf Engine @validName).to.be.true
+        expect(Engine.prototype.isPrototypeOf Engine()).to.be.true
 
     describe 'instance.getNodeType()', ->
 
