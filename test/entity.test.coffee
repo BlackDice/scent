@@ -72,10 +72,10 @@ describe 'Entity', ->
 				expect(@entity.add @alpha).to.equal @entity
 
 			it 'calls notifier componentAdded', ->
-				rem = Entity.componentAdded[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Entity.componentAdded.notify spy = sinon.spy()
 				@entity.add @alpha
 				expect(spy).to.have.been.calledOn(@entity).calledWith(@alpha).calledOnce
-				Entity.componentAdded[ NoMe.bDenotify ] rem
+				Entity.componentAdded.denotify rem
 
 			it 'allows component to be added to single entity only', ->
 				@entity.add @alpha
@@ -102,10 +102,10 @@ describe 'Entity', ->
 				expect(@entity.has @cAlphaComponent).to.be.true
 
 			it 'calls notifier componentAdded', ->
-				rem = Entity.componentAdded[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Entity.componentAdded.notify spy = sinon.spy()
 				@entity.replace @alpha
 				expect(spy).to.have.been.calledOn(@entity).calledWith(@alpha).calledOnce
-				Entity.componentAdded[ NoMe.bDenotify ] rem
+				Entity.componentAdded.denotify rem
 
 			it 'allow replaced component to be added in another entity', ->
 				@entity.add @alpha
@@ -159,25 +159,25 @@ describe 'Entity', ->
 				expect(@entity.has @cAlphaComponent).to.be.false
 
 			it 'should call dispose method of removed component by default', ->
-				rem = Component.disposed[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Component.disposed.notify spy = sinon.spy()
 				@entity.add @alpha
 				@entity.remove @cAlphaComponent
 				expect(spy).to.have.been.calledOn(@alpha)
-				Component.disposed[ NoMe.bDenotify ] rem
+				Component.disposed.denotify rem
 
 			it 'should not call dispose of component if second argument is false', ->
-				rem = Component.disposed[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Component.disposed.notify spy = sinon.spy()
 				@entity.add @alpha
 				@entity.remove @cAlphaComponent, false
 				expect(spy).to.not.have.been.called
-				Component.disposed[ NoMe.bDenotify ] rem
+				Component.disposed.denotify rem
 
 			it 'calls notifier componentRemoved', ->
 				@entity.add @alpha
-				rem = Entity.componentRemoved[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Entity.componentRemoved.notify spy = sinon.spy()
 				@entity.remove @cAlphaComponent
 				expect(spy).to.have.been.calledOn(@entity).calledWith(@cAlphaComponent).calledOnce
-				Entity.componentRemoved[ NoMe.bDenotify ] rem
+				Entity.componentRemoved.denotify rem
 
 			it 'allows removed component to be added in another entity', ->
 				@entity.add @alpha
@@ -235,14 +235,14 @@ describe 'Entity', ->
 				expect(@entity.has @cBetaComponent).to.be.false
 
 			it 'should call dispose method of all components', ->
-				rem = Component.disposed[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Component.disposed.notify spy = sinon.spy()
 				@entity.add @alpha
 				@entity.add @beta
 				do @entity[ symbols.bDispose ]
 				expect(spy).to.have.been.calledOn @alpha
 				expect(spy).to.have.been.calledOn @beta
 				expect(spy).to.have.been.calledTwice
-				Component.disposed[ NoMe.bDenotify ] rem
+				Component.disposed.denotify rem
 
 			it 'store entity into the pool for later retrieval', ->
 				expected = do Entity
@@ -251,10 +251,10 @@ describe 'Entity', ->
 				expect(actual).to.equal expected
 
 			it 'calls notifier for disposal of entity', ->
-				rem = Entity.disposed[ NoMe.bNotify ] spy = sinon.spy()
+				rem = Entity.disposed.notify spy = sinon.spy()
 				do @entity[ symbols.bDispose ]
 				expect(spy).to.have.been.calledOn(@entity).calledOnce
-				Entity.disposed[ NoMe.bDenotify ] rem
+				Entity.disposed.denotify rem
 
 			it 'should reset @@changed property for disposed entity', ->
 				@entity.add @alpha

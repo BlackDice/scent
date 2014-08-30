@@ -8,7 +8,7 @@ async = require 'async'
 NoMe = require 'nome'
 Lill = require 'lill'
 
-{Map} = require './es6-support'
+{Map} = require 'es6'
 
 symbols = require './symbols'
 Node = require './node'
@@ -93,23 +93,23 @@ Engine = (initializer) ->
 			entry = nodeTypes.next()
 		Lill.clear updatedEntities
 
-	engine.onUpdate = engine.update[ NoMe.bNotify ]
+	engine.onUpdate = engine.update.notify
 
-	nomeDisposed = Entity.disposed[ NoMe.bNotify ] ->
+	nomeDisposed = Entity.disposed.notify ->
 		# TODO: Possible error if disposing entity that is not
 		# in this engine, it would be added to it like this!
 		Lill.add updatedEntities, this
 		Lill.remove engine.entityList, this
 
-	nomeAdded = Entity.componentAdded[ NoMe.bNotify ] ->
+	nomeAdded = Entity.componentAdded.notify ->
 		Lill.add updatedEntities, this
-	nomeRemoved = Entity.componentRemoved[ NoMe.bNotify ] ->
+	nomeRemoved = Entity.componentRemoved.notify ->
 		Lill.add updatedEntities, this
 
 	engine[ symbols.bDispose ] = ->
-		Entity.disposed[ NoMe.bDenotify ] nomeDisposed
-		Entity.componentAdded[ NoMe.bDenotify ] nomeAdded
-		Entity.componentRemoved[ NoMe.bDenotify ] nomeRemoved
+		Entity.disposed.denotify nomeDisposed
+		Entity.componentAdded.denotify nomeAdded
+		Entity.componentRemoved.denotify nomeRemoved
 		nodeMap.clear()
 		systemList.length = 0
 		injections.clear()

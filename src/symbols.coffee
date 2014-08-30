@@ -1,6 +1,6 @@
 'use strict'
 
-{Symbol} = require './es6-support'
+{Symbol} = require 'es6'
 
 exports.bName = Symbol 'name of the object'
 exports.bType = Symbol 'type of the object'

@@ -1,7 +1,7 @@
 {
   "name": "scent",
   "private": true,
-  "version": "0.0.4",
+  "version": "0.0.5",
   "repository": {
     "type": "git",
     "url": "git@git.mrammor.com:library/scent.git"
@@ -9,7 +9,7 @@
   "main": "lib/scent.js",
   "license": "MIT",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha test/run.coffee"
   },
   "devDependencies": {
     "sinon-chai": "^2.5.0",
@@ -17,17 +17,16 @@
     "sinon": "^1.10.3",
     "chai": "^1.9.1",
     "coffeeify": "^0.7.0",
-    "coffee-script": "^1.7.1"
+    "coffee-script": "^1.8.0"
   },
   "dependencies": {
     "debug": "^1.0.4",
     "lodash": "^2.4.1",
-    "es6-shim": "^0.15.0",
     "fast.js": "0.0.3",
-    "es6-symbol": "^0.1.0",
-    "lill": "^0.3.1",
-    "nome": "0.0.4",
+    "lill": "^0.3.2",
+    "nome": "^0.1.1",
     "fn-args": "^1.0.0",
-    "async": "^0.9.0"
+    "async": "^0.9.0",
+    "es6": "http://github.com/BlackDice/es6/tarball/0.0.1"
   }
 }

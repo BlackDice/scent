@@ -2,23 +2,23 @@
 Node = require '../src/node'
 symbols = require '../src/symbols'
 
-{Map} = require '../src/es6-support'
+{Map} = require 'es6'
 
 describe 'Node', ->
-	
+
 	it 'should be a function', ->
 		expect(Node).to.be.a "function"
 
 	it 'expects array or single component at first argument', ->
 
-		toThrow = (msg, fn) -> 
+		toThrow = (msg, fn) ->
 			expect(fn).to.throw TypeError, /invalid component/, msg
 		toThrow 'number', -> Node 1,
 		toThrow 'bool', -> Node true
 		toThrow 'string', -> Node 'nothing'
 		toThrow 'object', -> Node {}
 
-		toThrowMissing = (msg, fn) -> 
+		toThrowMissing = (msg, fn) ->
 			expect(fn).to.throw TypeError, /component for node/, msg
 		toThrowMissing 'empty array', -> Node []
 		toThrowMissing 'num array', -> Node [1]
@@ -27,7 +27,7 @@ describe 'Node', ->
 
 	it 'expects Map or object with get and set methods in second argument', ->
 		comp = createMockComponent()
-		toThrow = (msg, fn) -> 
+		toThrow = (msg, fn) ->
 			expect(fn).to.throw TypeError, /storage map expected/, msg
 		toThrow 'number', -> Node [comp], 1
 		toThrow 'bool', -> Node [comp], true
@@ -67,12 +67,12 @@ describe 'Node', ->
 			@entity = @createEntity()
 
 		afterEach ->
-			@nNode.each (node) => @nNode.removeEntity node[ symbols.bEntity ] 
+			@nNode.each (node) => @nNode.removeEntity node[ symbols.bEntity ]
 
 		expectEntity = (nodeList, fnName) ->
-			toThrow = (msg, fn) -> 
+			toThrow = (msg, fn) ->
 				expect(fn).to.throw TypeError, /invalid entity/, msg
-			
+
 			toThrow 'number', -> nodeList[fnName] 1
 			toThrow 'bool', -> nodeList[fnName] true
 			toThrow 'string', -> nodeList[fnName] 'nothing'
@@ -212,7 +212,7 @@ describe 'Node', ->
 
 			it 'expects callback function in first argument', ->
 				nNode = @nNode
-				toThrow = (msg, fn) -> 
+				toThrow = (msg, fn) ->
 					expect(fn).to.throw TypeError, /callback function/, msg
 				toThrow 'void', -> nNode.each()
 				toThrow 'null', -> nNode.each null

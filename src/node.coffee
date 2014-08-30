@@ -4,7 +4,7 @@ log = (require 'debug') 'scent:node'
 _  = require 'lodash'
 fast = require 'fast.js'
 
-{Symbol, Map} = require './es6-support'
+{Symbol, Map} = require 'es6'
 
 Lill = require 'lill'
 
@@ -32,7 +32,7 @@ Node = (componentTypes, storageMap) ->
 
 	# Return existing node list
 	return nodeList if storageMap and nodeList = storageMap.get hash
-	
+
 	# Create actual node list
 	nodeList = Object.create NodeList, NodeListProps
 	nodeList[ bList ] = componentTypes

@@ -3,10 +3,9 @@
 log = (require 'debug') 'scent:component'
 _ = require 'lodash'
 fast = require 'fast.js'
-lill = require 'lill'
 NoMe = require 'nome'
 
-{Symbol, Map, Set} = require './es6-support'
+{Symbol, Map, Set} = require 'es6'
 
 symbols = require './symbols'
 bPool = Symbol 'pool of disposed components'

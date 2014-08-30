@@ -2,25 +2,25 @@
 
 log = (require 'debug') 'scent:entity'
 _ = require 'lodash'
-lill = require 'lill'
+Lill = require 'lill'
 NoMe = require 'nome'
 
-{Symbol, Map} = require './es6-support'
+{Symbol, Map} = require 'es6'
 
 symbols = require './symbols'
 bEntity = Symbol 'represent entity reference on the component'
 bList = Symbol 'map of components in the entity'
 bEntityChanged = Symbol 'timestamp of change of component list'
 
-entityPool = lill.attach {}
+entityPool = Lill.attach {}
 
 Entity = (components) ->
 
 	if components and not _.isArray components
 		throw new TypeError 'expected array of components for entity'
 
-	if entity = lill.getTail entityPool
-		lill.remove entityPool, entity
+	if entity = Lill.getTail entityPool
+		Lill.remove entityPool, entity
 	else
 		entity = Object.create entityPrototype, entityProps
 		entity[ bList ] = new Map
@@ -87,10 +87,10 @@ Entity.disposed = NoMe ->
 	this[ bList ].forEach disposeComponent
 	this[ bList ].clear()
 	delete this[ bEntityChanged ]
-	lill.add entityPool, this
+	Lill.add entityPool, this
 	return this
 
-(require './component').disposed[ NoMe.bNotify ] ->
+(require './component').disposed.notify ->
 	if entity = this[ bEntity ]
 		entity.remove this[ symbols.bType ]
 		delete this[ bEntity ]

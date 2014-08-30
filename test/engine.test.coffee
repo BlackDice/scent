@@ -273,7 +273,7 @@ describe 'Engine', ->
             expect(NoMe.is @engine.update).to.be.true
 
         it 'exposes notify method as onUpdate', ->
-            expect(@engine.onUpdate).to.equal @engine.update[ NoMe.bNotify ]
+            expect(@engine.onUpdate).to.equal @engine.update.notify
 
         it 'adds created entity to compatible nodes', ->
             expect(@nAlphaNode.size).to.equal 0
