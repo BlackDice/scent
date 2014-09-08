@@ -190,6 +190,10 @@ To retrieve component instance itself you can use `get` method. It will return `
 
 	building = entity.get cBuilding
 
+In case you want to retrieve whole list of component instances, use `getAll` method.
+
+	components = entity.getAll()
+
 #### Removing components
 
 Call `remove` method to unchain the component instance from entity.

@@ -138,6 +138,31 @@ describe 'Entity', ->
 				@entity.add @alpha
 				expect(@entity.get @cAlphaComponent).to.equal @alpha
 
+		it 'responds to getAll method', ->
+			expect(@entity).to.respondTo 'getAll'
+
+		describe 'getAll()', ->
+
+			it 'should return empty array when no components are present', ->
+				expect(result = @entity.getAll()).to.be.an 'array'
+				expect(result.length).to.equal 0
+
+			it 'should return array of added components', ->
+				@entity.add @alpha
+				@entity.add @beta
+				expect(result = @entity.getAll()).to.be.an 'array'
+				expect(result.length).to.equal 2
+				expect(result).to.include @alpha
+				expect(result).to.include @beta
+
+			it 'optionally accepts array that will be filled with components', ->
+				@entity.add @alpha
+				@entity.add @beta
+				expected = []
+				actual = @entity.getAll expected
+				expect(actual).to.equal expected
+				expect(actual.length).to.equal 2
+
 		it 'responds to remove method', ->
 			expect(@entity).to.respondTo 'remove'
 

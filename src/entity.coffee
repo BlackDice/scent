@@ -57,6 +57,14 @@ entityPrototype =
 	get: (componentType) ->
 		return this[ bList ].get(componentType) or null
 
+	getAll: (result = []) ->
+		components = this[ bList ].values()
+		entry = components.next()
+		while not entry.done
+			result.push entry.value
+			entry = components.next()
+		return result
+
 	remove: (componentType, dispose) ->
 		if false isnt dispose and component = this[ bList ].get componentType
 			disposeComponent component
