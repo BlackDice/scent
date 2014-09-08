@@ -5,7 +5,7 @@ symbols = require '../src/symbols'
 describe 'Component', ->
 
 	before ->
-		@validFields = 'test1 test2 test3'
+		@validFields = 'x test1 test2 test3'
 		@fieldsArray = @validFields.split ' '
 		@validName = 'name'
 		@resetIdentities = ->
@@ -160,13 +160,13 @@ describe 'Component', ->
 				expect(@component[field]).to.equal i
 
 		it 'should set values based on array passed into function', ->
-			component = @cComponent [10, 20, 30]
+			component = @cComponent [5, 10, 20, 30]
 			expect(component.test1).to.equal 10
 			expect(component.test2).to.equal 20
 			expect(component.test3).to.equal 30
 
 		it 'should keep values undefined when passed array is shorter', ->
-			component = @cComponent [10, 20]
+			component = @cComponent [5, 10, 20]
 			expect(component.test1).to.equal 10
 			expect(component.test2).to.equal 20
 			expect(component.test3).to.not.be.ok

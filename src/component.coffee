@@ -13,7 +13,7 @@ bData = Symbol 'data array for the component'
 
 identities = fast.clone(require './primes').reverse()
 
-fieldsRx = /(?:^|\s)([a-z][a-z0-9]+(?=\s|$))/gi
+fieldsRx = /(?:^|\s)([a-z][a-z0-9]*(?=\s|$))/gi
 identityRx = /(?:^|\s)#([0-9]+(?=\s|$))/i
 
 Component = (name, definition) ->
