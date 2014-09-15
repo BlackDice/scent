@@ -93,7 +93,7 @@ Engine = (initializer) ->
 			entry = nodeTypes.next()
 		Lill.clear updatedEntities
 
-	engine.onUpdate = engine.update.notify
+	engine.onUpdate = fast.bind engine.update.notify, engine.update
 
 	nomeDisposed = Entity.disposed.notify ->
 		# TODO: Possible error if disposing entity that is not

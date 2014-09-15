@@ -269,12 +269,6 @@ describe 'Engine', ->
         it 'should be a function', ->
             expect(@engine).to.respondTo 'update'
 
-        it 'should be wrapped by NoMe', ->
-            expect(NoMe.is @engine.update).to.be.true
-
-        it 'exposes notify method as onUpdate', ->
-            expect(@engine.onUpdate).to.equal @engine.update.notify
-
         it 'adds created entity to compatible nodes', ->
             expect(@nAlphaNode.size).to.equal 0
             expect(@nBetaNode.size).to.equal 0
@@ -297,6 +291,30 @@ describe 'Engine', ->
             expect(@nAlphaNode.size).to.equal 1, 'before update'
             @engine.update()
             expect(@nAlphaNode.size).to.equal 0, 'after update'
+
+    describe 'instance.onUpdate', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'onUpdate'
+
+        it 'expects callback function', ->
+            {onUpdate} = @engine
+            toThrow = (msg, fn) ->
+                expect(fn).to.throw TypeError, /expected function/, msg
+            toThrow 'string', -> onUpdate 'str'
+            toThrow 'number', -> onUpdate 1
+            toThrow 'bool', -> onUpdate true
+            toThrow 'false', -> onUpdate false
+            toThrow 'array', -> onUpdate []
+            toThrow 'object', -> onUpdate {}
+
+        it 'invokes passed callback when engine.update is invoked', ->
+            @engine.onUpdate(spy = sinon.spy())
+            @engine.update(10, 20)
+            expect(spy).to.have.been.calledOnce.calledWith(10, 20).calledOn @engine
 
     describe 'provide()', ->
 
