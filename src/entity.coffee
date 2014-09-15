@@ -121,5 +121,9 @@ validateComponentType = (componentType) ->
 	unless _.isFunction(componentType) and componentType[ symbols.bIdentity ]
 		throw new TypeError 'invalid component type for entity'
 
+Entity.prototype = Object.create Function.prototype
+Entity.prototype.toString = -> "Entity (#{this.size} components)"
+Object.setPrototypeOf entityPrototype, Entity.prototype
+
 Object.freeze Entity
 module.exports = Entity
