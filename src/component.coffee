@@ -113,7 +113,7 @@ initializeData = (component, fields, data) ->
 		component[ bData ] = new Array(fields.length)
 	return
 
-if process.env.NODE_ENV is 'test'
+if IN_TEST
 	Component.identities = identities
 
 Object.freeze basePrototype
