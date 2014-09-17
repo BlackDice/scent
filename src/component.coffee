@@ -113,7 +113,7 @@ initializeData = (component, fields, data) ->
 		component[ bData ] = new Array(fields.length)
 	return
 
-if typeof IN_TEST
+if typeof IN_TEST isnt 'undefined'
 	Component.identities = identities
 
 Object.freeze basePrototype

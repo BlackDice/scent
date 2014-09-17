@@ -1,4 +1,4 @@
-global = global or window
+global = do Function('return this')
 global.IN_TEST = 'test'
 
 require './component.test.coffee'
