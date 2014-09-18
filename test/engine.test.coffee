@@ -219,15 +219,15 @@ describe 'Engine', ->
             expect(=> @engine.start()).to.throw Error, /it is failure/
 
         it 'provides engine instance to system initializer', ->
-            system = mockSystem 'withEngine', (engine) =>
-                expect(engine).to.equal @engine
+            system = mockSystem 'withEngine', ($engine) =>
+                expect($engine).to.equal @engine
             @engine.addSystem system
             @engine.start()
 
         it 'invokes callback when async systems are initialized', (done) ->
             called = no
-            @engine.addSystem mockSystem 'async', (done) ->
-                setTimeout (-> called = yes; done null), 0
+            @engine.addSystem mockSystem 'async', ($done) ->
+                setTimeout (-> called = yes; $done()), 0
             @engine.start ->
                 expect(called).to.be.true
                 done()
@@ -246,8 +246,8 @@ describe 'Engine', ->
             expect(spy.firstCall.args[0].message).to.match /it is failure/
 
         it 'invokes callback with error during async system initialization', ->
-            @engine.addSystem mockSystem 'failing', (done) ->
-                done new Error 'it is failure'
+            @engine.addSystem mockSystem 'failing', ($done) ->
+                $done new Error 'it is failure'
             spy = sinon.spy()
             @engine.start spy
             expect(spy).to.have.been.calledOnce

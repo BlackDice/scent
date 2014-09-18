@@ -149,7 +149,7 @@ Engine = (initializer) ->
 	getSystemArgs = (systemInitializer, done) ->
 		args = fnArgs systemInitializer
 		fast.forEach args, (argName, i) ->
-			if done and argName is 'done'
+			if done and argName is '$done'
 				injection = done
 			else
 				injection = if injections.has argName
@@ -181,7 +181,7 @@ Engine = (initializer) ->
 		injections.set name, injection
 		return
 
-	provide 'engine', engine
+	provide '$engine', engine
 
 	if initializer
 		initializer.call null, engine, provide

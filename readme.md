@@ -398,18 +398,18 @@ Argument `done` is here to support asynchronous operations. When everything is l
 
 You may have heard about term *dependency injection*. It's rather simple but powerful idea. Scent engine provides this to power up systems more easily. As you may have noticed earlier, system initializer function isn't initially expecting any arguments. Since each system is different and has different needs, it would be cumbersome to have fixed arguments in there.
 
-	System 'powerful', (engine) ->
+	System 'powerful', ($engine) ->
 
-Engine will analyze the name of arguments you have used for function declaration and provide configured values upon its invocation. Order of the arguments or their number doesn't matter here.
+Engine will analyze the name of arguments you have used for function declaration and provide configured values upon its invocation. Order of the arguments or their number doesn't matter here. There are two injections that are provided for you by default. First can be seen in example above, it's engine instance.
 
-There are two injections that are provided for you by default. First can be seen in example above, it's engine instance.
+Note the `$` prefix. If you are about to minify your code, there is usually some kind of shortening variable names. This would obviously break dependency injection here since it is based on variable names. We recommend it as good practice to prefix all injected variables so you can tell your minifier what variables should stay in place. Without prefix you would be keeping all occurrences of *engine* which might be quite a lot.
 
 ##### Asynchronous system
 
 Second built-in injection is named `done` and once used in system initializer arguments, it marks the system as *asynchronous*. It is expected from you to call this callback whenever the system is ready.
 
-	System 'async', (done) ->
-		makeAsyncCall(done)
+	System 'async', ($done) ->
+		makeAsyncCall($done)
 
 Callback is error-first style and in case you pass anything truthy there, it will interrupt engine start and the result is propagated to callback from `start` method. Any arguments beside first one are ignored (at least for now).
 
@@ -431,7 +431,7 @@ Return value of engine initialization function is not important, but if you retu
 During engine initialization you can call `provide` function passed in arguments to actually setup your own injection for system initializers.
 
 	engine = Engine (engine, provide) ->
-		provide 'app', appInstance
+		provide '$app', appInstance
 
 Name defined here corresponds to the name of argument you need to use in your system initializer function. You can specify any static value that you want to provide, eg. object with shared settings that some systems might need.
 
@@ -455,7 +455,7 @@ Technically you can create multiple engine instances, but there is currently no 
 
 Are you are interested in game development? Would you like to beat some challenges while participating on development of interesting and innovative WebGL multi-player game?
 
-We require passion for game development and honest people, eg. don't make excuses about time if you don't want to really participate. You should have some knowledge of Javascript and web technologies in general. Knowing HTML + CSS isn't going to help you much here. You should be able to communicate in english or czech language.
+We require passion for game development and honest people, eg. don't make excuses about time if you don't want to really participate. You should have some knowledge of Javascript and web technologies in general. Knowing HTML + CSS isn't going to help you much here. You should be able to communicate in English or Czech language.
 
 We are small growing company filled with talented and friendly people. We are not dreamers, it's hard area of business, but we are determined to make this happen. Hop on the board and drop us mail *info (at) mrammor.com*.
 
