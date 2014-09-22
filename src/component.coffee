@@ -19,6 +19,8 @@ identityRx = /(?:^|\s)#([0-9]+(?=\s|$))/i
 Component = (name, definition) ->
 	verifyName name
 
+	return definition if definition instanceof Component
+
 	{fields, identity} = parseDefinition definition
 
 	componentPool = []

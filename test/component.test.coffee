@@ -40,13 +40,17 @@ describe 'Component', ->
 
 		expect(-> Component 'null', null).to.not.throw
 
-	it 'should return a component type function', ->
+	it 'returns a component type function', ->
 		expect(Component 'name').to.be.a "function"
 
-	it 'should return a new function for every call', ->
+	it 'returns a new function for every call', ->
 		expected = Component 'name'
 		actual = Component 'name'
 		expect(actual).to.not.equal expected
+
+	it 'returns second argument when component type passed', ->
+		expected = Component 'name'
+		expect(Component 'name', expected).to.equal expected
 
 	describe 'type', ->
 
