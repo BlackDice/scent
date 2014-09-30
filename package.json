@@ -1,23 +1,25 @@
 {
   "name": "scent",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "git@git.mrammor.com:library/scent.git"
   },
   "main": "lib/scent.js",
+  "browser": "lib/scent-browser.js",
   "license": "MIT",
   "scripts": {
     "test": "mocha test/run.coffee"
   },
   "devDependencies": {
-    "sinon-chai": "^2.5.0",
-    "chai-as-promised": "^4.1.1",
-    "sinon": "^1.10.3",
+    "browserify": "~5.12.1",
     "chai": "^1.9.1",
+    "chai-as-promised": "^4.1.1",
+    "coffee-script": "^1.8.0",
     "coffeeify": "^0.7.0",
-    "coffee-script": "^1.8.0"
+    "sinon": "^1.10.3",
+    "sinon-chai": "^2.5.0"
   },
   "dependencies": {
     "debug": "^1.0.4",
