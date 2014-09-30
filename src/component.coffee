@@ -43,6 +43,7 @@ Component = (name, definition) ->
 	ComponentType[ symbols.bFields ] = fields
 	ComponentType[ symbols.bName ] = name
 	ComponentType[ symbols.bIdentity ] = identity
+	ComponentType[ symbols.bDefinition ] = "##{identity} #{fields.join(' ')}"
 
 	toString = "Component #{name}: " + fields.join ', '
 	ComponentType.toString = -> toString

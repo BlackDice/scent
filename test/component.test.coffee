@@ -112,6 +112,11 @@ describe 'Component', ->
 			cExpected = Component 'expected2'
 			expect(cExpected[ symbols.bIdentity ]).to.equal 2
 
+		it 'should provide component definition in @@definition property', ->
+			def = 'alpha beta gama'
+			cComponent = Component 'test', def
+			expect(cComponent[ symbols.bDefinition ]).to.equal "#2 #{def}"
+
 		it 'should expose list of defined properties when calling toString()', ->
 			cComponent = Component @validName, @validFields
 			stringified = cComponent.toString()

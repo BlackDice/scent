@@ -9,6 +9,7 @@ exports.bChanged = Symbol 'timestamp of last change'
 
 exports.bIdentity = Symbol 'identifier of the object'
 exports.bFields = Symbol 'fields defined for the component'
+exports.bDefinition = Symbol 'definition of the component'
 
 exports.bNodes = Symbol 'nodes that owns entity'
 exports.bEntity = Symbol 'reference to entity instance'
