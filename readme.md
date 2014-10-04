@@ -22,7 +22,7 @@ Framework is available from NPM (`npm install -S scent`) and Bower (`bower insta
 
 We are using CommonJS modules. You can use these in NodeJS and also in browser with the help of Browserify. To access any parts of framework simply make call like the following.
 
-	{Component, Entity, Node, System, Engine, Symbols} = require 'scent'
+	{Component, Entity, Node, Action, System, Engine, Symbols} = require 'scent'
 
 ## Terminology
 
@@ -33,6 +33,8 @@ Overview of the parts of the framework.
  * The **Entity** is any game object. It is composed of components designating the purpose of entity that way.
 
  * The **Node** is small subset of components owned by single entity and simplifies work of the systems.
+
+ * The **Action** is container for any game events that might have happened and needs some processing.
 
  * The **System** is small processor of data contained in components.
 
@@ -45,6 +47,7 @@ There is notation for variables holding known types defined by this framework. A
 	cWeapon      component type
 	eCharacter   entity instance
 	nStructure   node type
+	aMove        action container
 	bName        symbol reference
 
 ### No classes
@@ -69,7 +72,7 @@ Acknowledged notation exists for the symbols, it uses `@@` as prefix. Anytime wh
 
 ## How it works
 
-Basically you should define some *component types*, created instances of them, set data and add them to different *entities*. Then you can let *systems* do their job with tremendous help of *nodes*. In the end, everything is nicely wrapped by the *engine*.
+Basically you should define some *component types*, created instances of them, set data and add them to different *entities*. Then you can let *systems* do their job with tremendous help of *nodes* and can be directed by *actions*. In the end, everything is nicely wrapped by the *engine*.
 
 ### Defining the component
 
@@ -306,7 +309,71 @@ Node item is directly linked to entity that is stored into `@@entity` property. 
 		if node.foundation.material = 'steel'
 			do node[ @@entity ][ @@dispose ] # remove the entity from the game
 
-### Need for logic
+### Actions in the field
+
+Before we jump into real game mechanics, let's introduce piece of puzzle called Action. Many games are built upon some kind of events happening in time. Usually they are based on user interaction or  generated based on some rules (eg. moving npc character, starting rain...).
+
+#### Defining action type
+
+Each action has to be named to be obtainable from the engine later. This can be also used for multiplayer game purposes of transmitting action across network.
+
+	aMove = Action 'move'
+
+#### Creating actions
+
+To create action and add it to the list, simply call `trigger` method.
+
+	aMove.trigger entity
+
+First argument is expected to be entity that is about to be influenced by this action. Any additional arguments are simply stored and can be obtained later when processing action.
+
+#### Accessing actions
+
+Usually there is only need to process all actions in single batch. For this there is `each` method.
+
+	aMove.each (action) ->
+
+Processing action doesn't actually removes that action from the list. Actions are generally supposed to be shared and processed differently in multiple systems.
+
+#### Getting action data
+
+Most of the actions are useless without additional data. The actual action object is array-like object meaning that data can be accessed by zero-based index.
+
+	aMove.trigger entity, 10, 20, 30
+	aMove.each (action) ->
+		action.entity
+		action[0] is 10
+		action[2] is 30
+
+Thanks to Coffeescript syntax this can be simplified like this.
+
+	[x, y, z] = action
+
+##### Named parameters
+
+This is more convenient way of accessing action data. It works similarly to how the Component behaves.
+
+	aMove = Action 'move', 'x y z'
+	aMove.trigger entity, 10, 20, 30
+	aMove.each (action) ->
+		action.x is 10
+		action.z is 30
+
+#### Action timestamp
+
+Often you might need to know when was action triggered so you can apply some time calculations. Each action object has `time` property containing environment timestamp.
+
+#### Finish processing
+
+This is done by engine by default, but in case you want remove set of events after processing them, simply call `finish` method. This clears the list. You cannot remove single action from the list.
+
+	aMove.finish()
+
+#### Buffering actions
+
+In case of shared action types along multiple systems, there is need for to keep list of actions consistent. When the action list is iterated for the first time (eg. by calling `each` method), it gets frozen and does not receives any more actions. Instead they are buffered internally and flushed to the last after the `finish` method is called.
+
+### System creates logic
 
 Entity itself is a nice package of related data, but it doesn't really do anything. For that purpose we need another piece of the puzzle - **systems** (note the plural).
 
@@ -360,6 +427,12 @@ You can pass any arguments you like in there. Those will be simply handed over t
 Engine handles memory map of node types for you. All node types you access through the engine are remembered and you can access them from any system.
 
 	nStructure = engine.getNodeType [cBuilding, cFoundation]
+
+#### Access to actions
+
+Accessing action by its name creates that action type and it will be managed by engine further on. That essentially means calling `finish` method at the end of update loop thus clearing list and unfreezing to receive more actions.
+
+	aMove = engine.getAction 'move'
 
 #### Entity management
 
