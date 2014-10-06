@@ -315,29 +315,38 @@ Before we jump into real game mechanics, let's introduce piece of puzzle called 
 
 #### Defining action type
 
-Each action has to be named to be obtainable from the engine later. This can be also used for multiplayer game purposes of transmitting action across network.
+Each action type has to be named to be easily identifiable. This can be also used for multiplayer game purposes of transmitting actions across network.
 
 	aMove = Action 'move'
+
+This creates the container for list of actions. The list is private and cannot be accessed directly. Instead there are methods allowing to modify its contents.
 
 #### Creating actions
 
 To create action and add it to the list, simply call `trigger` method.
 
-	aMove.trigger entity
+	aMove.trigger entity, x, y, z
 
-First argument is expected to be entity that is about to be influenced by this action. Any additional arguments are simply stored and can be obtained later when processing action.
+First argument is expected to be entity that is about to be influenced by this action. Any additional arguments are stored with the action and can be obtained later when processing action.
 
-#### Accessing actions
+#### Processing actions
 
-Usually there is only need to process all actions in single batch. For this there is `each` method.
+Action processing should be done in the batch. This conforms to paradigm established by nodes and fits into general sense of the framework. Currently there are no means to access single actions from the list nor remove them.
 
 	aMove.each (action) ->
 
-Processing action doesn't actually removes that action from the list. Actions are generally supposed to be shared and processed differently in multiple systems.
+Method `each` also support passing any subsequent arguments inside every iteration. This allows to apply patterns like this if you want to avoid closures.
+
+	loopAction = (action, data) ->
+		# process action while using some common data
+
+	aMove.each loopAction, commonData
+
+There is no support for context of invoked callbacks. In case you need one, you have to use `Funtion.bind` or something similar.
 
 #### Getting action data
 
-Most of the actions are useless without additional data. The actual action object is array-like object meaning that data can be accessed by zero-based index.
+Most of the actions are probably useless without additional data. The actual action object is array-like object meaning that data can be accessed by zero-based index in the order they were passed when triggered.
 
 	aMove.trigger entity, 10, 20, 30
 	aMove.each (action) ->
@@ -345,33 +354,43 @@ Most of the actions are useless without additional data. The actual action objec
 		action[0] is 10
 		action[2] is 30
 
-Thanks to Coffeescript syntax this can be simplified like this.
+	# or like this...
 
 	[x, y, z] = action
 
-##### Named parameters
+This is handy if you have just couple of arguments. In case more complex structures, different approach might be required.
 
-This is more convenient way of accessing action data. It works similarly to how the Component behaves.
+Word of warning. Don't use action object outside of the scope of the `each` method. Its data will be cleared and object will be reused thus causing you unforeseen consequences.
 
-	aMove = Action 'move', 'x y z'
-	aMove.trigger entity, 10, 20, 30
+#### Trigger with data object
+
+Second (more convenient) method of accessing data is based on passing object in the second argument of an `trigger` method. Doing it like that will give you access to that object properties through `get` method.
+
+	aMove.trigger entity, x: 10, y: 20, z: 30
 	aMove.each (action) ->
-		action.x is 10
-		action.z is 30
+		action.get 'x'
+		action.get 'y'
+		...
+		action[0].x # works too
 
 #### Action timestamp
 
 Often you might need to know when was action triggered so you can apply some time calculations. Each action object has `time` property containing environment timestamp.
 
-#### Finish processing
+	lastTime = Date.now()
+	aMove.each (action) ->
+		action.time - lastTime
 
-This is done by engine by default, but in case you want remove set of events after processing them, simply call `finish` method. This clears the list. You cannot remove single action from the list.
+#### Immutable actions
 
-	aMove.finish()
+Internal list of actions has to be immutable during its processing. Means all systems and other pieces of code should obtain exactly same list of actions at the current game loop. To achieve this behavior, an action type creates internal buffer of actions that were triggered after first call to `each` occurred. When actions are processed fully, just call `finish` method. Two things will happen:
 
-#### Buffering actions
+ * current list is completely cleared
+ * internal buffer of actions is flushed to current list
 
-In case of shared action types along multiple systems, there is need for to keep list of actions consistent. When the action list is iterated for the first time (eg. by calling `each` method), it gets frozen and does not receives any more actions. Instead they are buffered internally and flushed to the last after the `finish` method is called.
+Basically it means that `trigger` method of an action type can be invoked any time, but if an action type is in the middle of processing (eg. looping), these new actions will stay aside and wait to be processed later.
+
+Note that `finish` method is called automatically by default engine implementation at the end of update loop.
 
 ### System creates logic
 
