@@ -8,7 +8,7 @@ NoMe = require 'nome'
 {Symbol, Map, Set} = require 'es6'
 
 symbols = require './symbols'
-bPool = Symbol 'pool of disposed components'
+# bPool = Symbol 'pool of disposed components'
 bData = Symbol 'data array for the component'
 
 identities = fast.clone(require './primes').reverse()
@@ -23,7 +23,7 @@ Component = (name, definition) ->
 
 	{fields, identity} = parseDefinition definition
 
-	componentPool = []
+	# componentPool = []
 
 	# Create prototype object for instances of the component type
 	componentPrototype = Object.create basePrototype
@@ -31,15 +31,15 @@ Component = (name, definition) ->
 		Object.defineProperty componentPrototype, field, createDataProperty(i)
 
 	ComponentType = (data) ->
-		if not data and componentPool.length
-			component = componentPool.pop()
-		else
-			component = Object.create componentPrototype
-			initializeData component, fields, data
-			Object.setPrototypeOf component, ComponentType.prototype
+		#
+		component = this
+		unless component instanceof ComponentType
+			component = new ComponentType data
+		initializeData component, fields, data
 		return component
 
-	ComponentType[ bPool ] = componentPool
+	ComponentType.prototype = componentPrototype
+	# ComponentType[ bPool ] = componentPool
 	ComponentType[ symbols.bFields ] = fields
 	ComponentType[ symbols.bName ] = name
 	ComponentType[ symbols.bIdentity ] = identity
@@ -91,7 +91,7 @@ Component.disposed = NoMe ->
 	return unless data = this[ bData ]
 	data.length = 0
 	delete this[ symbols.bChanged ]
-	this[ symbols.bType ][ bPool ].push this
+	# this[ symbols.bType ][ bPool ].push this
 
 basePrototype =
 	toString: -> this[ symbols.bType ].toString() + if data = this[ bData ]
