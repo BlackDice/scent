@@ -13,6 +13,7 @@ Lill = require 'lill'
 symbols = require './symbols'
 Node = require './node'
 Entity = require './entity'
+Action = require './action'
 
 Engine = (initializer) ->
 
@@ -27,6 +28,14 @@ Engine = (initializer) ->
 
 	engine.getNodeType = (componentTypes) ->
 		return Node componentTypes, nodeMap
+
+	actionMap = new Map
+
+	engine.getActionType = (actionName) ->
+		unless actionType = actionMap.get actionName
+			actionType = Action actionName
+			actionMap.set actionName, actionType
+		return actionType
 
 	# List of all entities in this engine
 	engine.entityList = Lill.attach {}
