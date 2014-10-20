@@ -49,6 +49,9 @@ Engine = (initializer) ->
 		Lill.add updatedEntities, entity
 		return entity
 
+	Object.defineProperty engine, 'size', get: ->
+		Lill.getSize engine.entityList
+
 	systemList = []
 	engine.addSystem = (systemInitializer) ->
 		unless systemInitializer and _.isFunction systemInitializer

@@ -316,6 +316,20 @@ describe 'Engine', ->
             @engine.update(10, 20)
             expect(spy).to.have.been.calledOnce.calledWith(10, 20).calledOn @engine
 
+    describe 'instance.size', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'is read-only property equal to 0 for empty engine', ->
+            expect(@engine).to.have.property "size"
+            @engine.size = 500
+            expect(@engine.size).to.equal 0
+
+        it 'returns number of entities in engine', ->
+            @engine.addEntity() for i in [1..10]
+            expect(@engine.size).to.equal 10
+
     describe 'provide()', ->
 
         it 'is function passed as second argument in engine initializer', ->
