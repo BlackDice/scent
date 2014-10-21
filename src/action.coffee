@@ -27,14 +27,20 @@ Action::trigger = (entity) ->
 	# 	throw new TypeError 'expected entity for the trigger call'
 
 	action = poolAction()
-	action.entity = entity
 	action.time = Date.now()
+
+	if entity instanceof Entity
+		argIndex = 1
+		action.entity = entity
+	else
+		argIndex = 0
+		action.entity = null
 
 	if arguments.length > 1 and _.isPlainObject dataArg = arguments[1]
 		action.get = (prop) ->
 			return dataArg[prop]
 
-	for val,i in arguments when i > 0
+	for val,i in arguments when i >= argIndex
 		action.push val
 
 	data = this[ bData ]

@@ -3,7 +3,7 @@ Action = require '../src/action'
 Entity = require '../src/entity'
 symbols = require '../src/symbols'
 
-describe 'Action', ->
+describe.only 'Action', ->
 
 	before ->
 		@validName = 'name'
@@ -51,19 +51,6 @@ describe 'Action', ->
 		it 'responds to `trigger` method', ->
 			expect(Action @validName).to.respondTo 'trigger'
 
-		it 'trigger() expects entity in the first argument', ->
-			trigger = Action(@validName).trigger
-			toThrow = (msg, fn) ->
-				expect(fn).to.throw TypeError, /expected entity/, msg
-			toThrow 'void', trigger
-			toThrow 'null', -> trigger null
-			toThrow 'string', -> trigger 'test'
-			toThrow 'number', -> trigger 1
-			toThrow 'bool', -> trigger true
-			toThrow 'array', -> trigger []
-			toThrow 'object', -> trigger {}
-			toThrow 'function', -> trigger new Function
-
 		it 'responds to `each` method', ->
 			expect(Action @validName).itself.to.respondTo 'each'
 
@@ -98,6 +85,12 @@ describe 'Action', ->
 			aType.each (action) ->
 				expect(action.entity).to.equal entity
 
+		it 'sets `entity` property to null if first argument is not entity', ->
+			aType = Action @validName
+			aType.trigger 1
+			aType.each (action) ->
+				expect(action.entity).to.equal null
+
 		it 'provides `time` property equal to timestamp of action triggering', ->
 			aType = Action @validName
 			clock = sinon.useFakeTimers expected = Date.now()
@@ -115,6 +108,14 @@ describe 'Action', ->
 				expect(action[0]).to.equal a
 				expect(action[1]).to.equal b
 				expect(action[2]).to.equal c
+
+		it 'shifts arguments by one if passed entity is invalid', ->
+			aType = Action @validName
+			aType.trigger 10, 20
+			aType.each (action) ->
+				expect(action.length).to.equal 2
+				expect(action[0]).to.equal 10
+				expect(action[1]).to.equal 20
 
 		it 'provides properties of first argument object through `get` method', ->
 			aType = Action @validName
