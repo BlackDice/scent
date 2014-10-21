@@ -23,8 +23,8 @@ Action = (name) ->
 Action.prototype = Object.create Function.prototype
 
 Action::trigger = (entity) ->
-	unless entity and entity instanceof Entity
-		throw new TypeError 'expected entity for the trigger call'
+	# unless entity and entity instanceof Entity
+	# 	throw new TypeError 'expected entity for the trigger call'
 
 	action = poolAction()
 	action.entity = entity
