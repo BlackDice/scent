@@ -31,7 +31,6 @@ Component = (name, definition) ->
 		Object.defineProperty componentPrototype, field, createDataProperty(i)
 
 	ComponentType = (data) ->
-		#
 		component = this
 		unless component instanceof ComponentType
 			component = new ComponentType data

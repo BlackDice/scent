@@ -20,8 +20,6 @@ Action = (name) ->
 
 	return Object.freeze actionType
 
-Action.prototype = Object.create Function.prototype
-
 Action::trigger = (entity) ->
 	# unless entity and entity instanceof Entity
 	# 	throw new TypeError 'expected entity for the trigger call'
@@ -36,7 +34,7 @@ Action::trigger = (entity) ->
 		argIndex = 0
 		action.entity = null
 
-	if arguments.length > 1 and _.isPlainObject dataArg = arguments[1]
+	if arguments.length > argIndex and _.isPlainObject dataArg = arguments[argIndex]
 		action.get = (prop) ->
 			return dataArg[prop]
 
