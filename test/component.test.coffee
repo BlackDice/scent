@@ -2,7 +2,7 @@
 Component = require '../src/component'
 symbols = require '../src/symbols'
 
-describe 'Component', ->
+xdescribe 'Component', ->
 
 	before ->
 		@validFields = 'x test1 test2 test3'

@@ -30,12 +30,41 @@ Engine = (initializer) ->
 		return Node componentTypes, nodeMap
 
 	actionMap = new Map
+	actionHandlerMap = new Map
 
-	engine.getActionType = (actionName) ->
+	engine.getActionType = (actionName, noCreate) ->
 		unless actionType = actionMap.get actionName
-			actionType = Action actionName
+			return null if noCreate is yes
+			actionType = new Action actionName
 			actionMap.set actionName, actionType
 		return actionType
+
+	engine.triggerAction = (actionName) ->
+		actionType = engine.getActionType actionName
+		unless actionHandlerMap.has actionType
+			log "Action `%s` cannot be triggered. Use onAction method to add handler first.", actionName
+			return engine
+
+		if arguments.length > 0
+			args = (arg for arg,i in arguments when i > 0)
+			fast.apply actionType.trigger, actionType, args
+		else
+			actionType.trigger()
+		return engine
+
+	engine.onAction = (actionName, callback) ->
+		unless _.isString actionName
+			throw new TypeError 'expected name of action for onAction call'
+		unless _.isFunction callback
+			throw new TypeError 'expected callback function for onAction call'
+
+		unless map = actionHandlerMap.get actionName
+			map = [callback]
+			actionType = engine.getActionType actionName
+			actionHandlerMap.set actionType, map
+		else
+			map.push callback
+		return engine
 
 	# List of all entities in this engine
 	engine.entityList = Lill.attach {}
@@ -98,6 +127,16 @@ Engine = (initializer) ->
 		return this
 
 	engine.update = NoMe ->
+		actionTypes = actionHandlerMap.keys()
+		actionTypeEntry = actionTypes.next()
+		while not actionTypeEntry.done
+			actionType = actionTypeEntry.value
+			callbacks = actionHandlerMap.get actionType
+			for callback in callbacks
+				actionType.each callback
+			actionType.finish()
+			actionTypeEntry = actionTypes.next()
+
 		nodeTypes = nodeMap.values()
 		entry = nodeTypes.next()
 		while not entry.done

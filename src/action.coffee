@@ -10,20 +10,21 @@ bData = Symbol 'internal data of the action type'
 symbols = require './symbols'
 Entity = require './entity'
 
-Action = (name) ->
-	unless _.isString name
-		throw new TypeError 'missing name of the action type'
+ActionType = (identifier) ->
+	unless identifier?
+		throw new TypeError 'expected identifier of an action type'
 
-	actionType = Object.create Action.prototype
-	actionType[ symbols.bName ] = name
+	if this instanceof ActionType
+		actionType = this
+	else
+		actionType = Object.create ActionType.prototype
+
+	actionType[ symbols.bName ] = identifier
 	actionType[ bData ] = {}
 
 	return Object.freeze actionType
 
-Action::trigger = (entity) ->
-	# unless entity and entity instanceof Entity
-	# 	throw new TypeError 'expected entity for the trigger call'
-
+ActionType::trigger = (entity) ->
 	action = poolAction()
 	action.time = Date.now()
 
@@ -52,7 +53,7 @@ Action::trigger = (entity) ->
 	target.push action
 	return
 
-Action::each = (iterator) ->
+ActionType::each = (iterator) ->
 	unless iterator and _.isFunction iterator
 		throw new TypeError 'expected iterator function for the each call'
 
@@ -66,7 +67,7 @@ Action::each = (iterator) ->
 
 	return
 
-Action::finish = ->
+ActionType::finish = ->
 	data = this[ bData ]
 	if data.list
 		for action in data.list
@@ -78,6 +79,9 @@ Action::finish = ->
 
 	data.list = data.buffer
 	return
+
+ActionType::toString = ->
+	"ActionType #{this[ symbols.bName ]}"
 
 listPool = []
 poolList = (add) ->
@@ -91,4 +95,4 @@ poolAction = (add) ->
 	return [] unless actionPool.length
 	return actionPool.pop()
 
-module.exports = Object.freeze Action
+module.exports = Object.freeze ActionType

@@ -3,7 +3,7 @@ Action = require '../src/action'
 Entity = require '../src/entity'
 symbols = require '../src/symbols'
 
-describe.only 'Action', ->
+describe 'Action', ->
 
 	before ->
 		@validName = 'name'
@@ -11,16 +11,11 @@ describe.only 'Action', ->
 	it 'should be a function', ->
 		expect(Action).to.be.a "function"
 
-	it 'expects name of action in the first argument', ->
+	it 'expects identifier of action in the first argument', ->
 		toThrow = (msg, fn) ->
-			expect(fn).to.throw TypeError, /missing name/, msg
+			expect(fn).to.throw TypeError, /expected identifier/, msg
 		toThrow 'void', Action
 		toThrow 'null', -> Action null
-		toThrow 'number', -> Action 1
-		toThrow 'bool', -> Action true
-		toThrow 'array', -> Action []
-		toThrow 'object', -> Action {}
-		toThrow 'function', -> Action new Function
 
 	it 'returns an action type object', ->
 		expect(Action @validName).to.be.a "object"

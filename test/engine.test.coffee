@@ -182,6 +182,26 @@ describe 'Engine', ->
         it 'returns engine instance itself', ->
             expect(@engine.addSystems [mockSystem()]).to.equal @engine
 
+    describe 'instance.triggerAction()', ->
+
+        Action = require '../src/action'
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'triggerAction'
+
+        it 'returns engine instance itself', ->
+            actual = @engine.triggerAction 'test'
+            expect(actual).to.equal @engine
+
+        it 'triggers action for specified action name', ->
+            @engine.triggerAction 'test', 20
+            actionType = @engine.getActionType 'test'
+            actionType.each (action) ->
+                expect(action[0]).to.equal 20
+
     describe 'instance.start()', ->
 
         beforeEach ->
@@ -292,6 +312,15 @@ describe 'Engine', ->
             @engine.update()
             expect(@nAlphaNode.size).to.equal 0, 'after update'
 
+        it 'invokes action type finish() method to clear action list', ->
+            @engine.onAction 'test1', spy1 = sinon.spy()
+            @engine.onAction 'test2', spy2 = sinon.spy()
+            @engine.triggerAction 'test1'
+            @engine.triggerAction 'test2'
+            @engine.update()
+            expect(spy1).to.have.been.calledOnce
+            expect(spy2).to.have.been.calledOnce
+
     describe 'instance.onUpdate', ->
 
         beforeEach ->
@@ -315,6 +344,50 @@ describe 'Engine', ->
             @engine.onUpdate(spy = sinon.spy())
             @engine.update(10, 20)
             expect(spy).to.have.been.calledOnce.calledWith(10, 20).calledOn @engine
+
+    describe 'instance.onAction', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'onAction'
+
+        it 'expects action name in first argument', ->
+            {onAction} = @engine
+            toThrow = (msg, fn) ->
+                expect(fn).to.throw TypeError, /expected name/, msg
+            toThrow 'number', -> onAction 1
+            toThrow 'bool', -> onAction true
+            toThrow 'false', -> onAction false
+            toThrow 'array', -> onAction []
+            toThrow 'object', -> onAction {}
+            toThrow 'function', -> onAction new Function
+
+        it 'expects callback function in second argument', ->
+            onAction = @engine.onAction.bind @engine, 'test'
+            toThrow = (msg, fn) ->
+                expect(fn).to.throw TypeError, /expected callback/, msg
+            toThrow 'string', -> onAction 'str'
+            toThrow 'number', -> onAction 1
+            toThrow 'bool', -> onAction true
+            toThrow 'false', -> onAction false
+            toThrow 'array', -> onAction []
+            toThrow 'object', -> onAction {}
+
+        it 'returns engine instance', ->
+            expect(@engine.onAction('name', ->)).to.equal @engine
+
+        it 'invokes callback for each triggered action when update is called', ->
+            @engine.onAction 'test', spy = sinon.spy()
+            @engine.triggerAction 'test', data1 = alpha: true, beta: false
+            @engine.triggerAction 'test', data2 = alpha: false, beta: true
+            @engine.update()
+            expect(spy).to.have.been.calledTwice
+            expect(spy.firstCall.args[0].get('alpha')).to.be.true
+            expect(spy.firstCall.args[0].get('beta')).to.be.false
+            expect(spy.secondCall.args[0].get('alpha')).to.be.false
+            expect(spy.secondCall.args[0].get('beta')).to.be.true
 
     describe 'instance.size', ->
 
