@@ -43,11 +43,10 @@ ActionType::trigger = (entity) ->
 		action.push val
 
 	data = this[ bData ]
-	if data.frozen
-		data.buffer = poolList() unless data.buffer
+	if data.buffer
 		target = data.buffer
 	else
-		data.list = poolList() unless data.list
+		data.list ?= poolList()
 		target = data.list
 
 	target.push action
@@ -58,7 +57,7 @@ ActionType::each = (iterator) ->
 		throw new TypeError 'expected iterator function for the each call'
 
 	data = this[ bData ]
-	data.frozen = yes
+	data.buffer ?= poolList()
 
 	return unless data.list?.length
 
@@ -78,6 +77,7 @@ ActionType::finish = ->
 		data.list = null
 
 	data.list = data.buffer
+	data.buffer = null
 	return
 
 ActionType::toString = ->

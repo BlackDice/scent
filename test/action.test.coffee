@@ -137,7 +137,6 @@ describe 'Action', ->
 			aType.trigger Entity() # this action should be buffered
 			expect(spy).to.have.been.calledOnce
 			aType.finish() # buffer is flushed
-			spy.reset()
-			aType.each spy
-			expect(spy).to.have.been.calledOnce # got action from the buffer
-
+			aType.trigger Entity() # more actions should be added
+			aType.each spy = sinon.spy()
+			expect(spy).to.have.been.calledTwice # got action from the buffer + new one
