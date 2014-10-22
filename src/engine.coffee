@@ -58,9 +58,9 @@ Engine = (initializer) ->
 		unless _.isFunction callback
 			throw new TypeError 'expected callback function for onAction call'
 
-		unless map = actionHandlerMap.get actionName
+		actionType = engine.getActionType actionName
+		unless map = actionHandlerMap.get actionType
 			map = [callback]
-			actionType = engine.getActionType actionName
 			actionHandlerMap.set actionType, map
 		else
 			map.push callback

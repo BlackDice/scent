@@ -379,15 +379,17 @@ describe 'Engine', ->
             expect(@engine.onAction('name', ->)).to.equal @engine
 
         it 'invokes callback for each triggered action when update is called', ->
-            @engine.onAction 'test', spy = sinon.spy()
+            @engine.onAction 'test', spy1 = sinon.spy()
+            @engine.onAction 'test', spy2 = sinon.spy()
             @engine.triggerAction 'test', data1 = alpha: true, beta: false
             @engine.triggerAction 'test', data2 = alpha: false, beta: true
             @engine.update()
-            expect(spy).to.have.been.calledTwice
-            expect(spy.firstCall.args[0].get('alpha')).to.be.true
-            expect(spy.firstCall.args[0].get('beta')).to.be.false
-            expect(spy.secondCall.args[0].get('alpha')).to.be.false
-            expect(spy.secondCall.args[0].get('beta')).to.be.true
+            expect(spy1).to.have.been.calledTwice
+            expect(spy2).to.have.been.calledTwice
+            expect(spy1.firstCall.args[0].get('alpha')).to.be.true
+            expect(spy2.firstCall.args[0].get('beta')).to.be.false
+            expect(spy2.secondCall.args[0].get('alpha')).to.be.false
+            expect(spy1.secondCall.args[0].get('beta')).to.be.true
 
     describe 'instance.size', ->
 
