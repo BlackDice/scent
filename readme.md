@@ -312,6 +312,20 @@ Node item is directly linked to entity that is stored into `@@entity` property. 
 		if node.foundation.material = 'steel'
 			do node[ @@entity ][ @@dispose ] # remove the entity from the game
 
+#### Change notifications
+
+Sometimes it might be useful to know that new node item has been added to particular node type to make some kind of setup over the entity. This can be achieved easily like this:
+
+	nStructure.onAdded (node) ->
+
+Callback will be invoked once for each node that were created because some entity has received requested components. There is also counterpart for a removal (eg. component is removed from entity).
+
+	nStructure.onRemoved (node) ->
+
+This is basically last spot where you can read data of node. Out of scope of the callback the node is going to be released for the future use. Don't use it then!
+
+Note that callbacks are not invoked immediately when creation or removal happens. Changes are stacked up and released when `finish` method is called. This will be handled by default engine for you.
+
 ### Actions in the field
 
 Before we jump into real game mechanics, let's introduce piece of puzzle called Action.  generally  are built upon some kind of events happening in time. Usually they are based on user interaction or  generated based on some rules (eg. moving npc character, starting rain...).

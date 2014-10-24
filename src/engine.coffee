@@ -134,10 +134,13 @@ Engine = (initializer) ->
 			actionTypeEntry = actionTypes.next()
 
 		nodeTypes = nodeMap.values()
-		entry = nodeTypes.next()
-		while not entry.done
-			updateNodeTypes entry.value
-			entry = nodeTypes.next()
+		nodeTypeEntry = nodeTypes.next()
+		while not nodeTypeEntry.done
+			nodeType = nodeTypeEntry.value
+			updateNodeTypes nodeType
+			nodeType.finish()
+			nodeTypeEntry = nodeTypes.next()
+
 		Lill.clear updatedEntities
 
 	engine.onUpdate = fast.bind engine.update.notify, engine.update

@@ -238,3 +238,64 @@ describe 'Node', ->
 				spy = sinon.spy()
 				@nNode.each spy, ctx = {}
 				expect(spy).to.be.calledOn ctx
+
+		it 'responds to `finish` method', ->
+			expect(@nNode).to.respondTo 'finish'
+
+		it 'responds to `onAdded` method', ->
+			expect(@nNode).to.respondTo 'onAdded'
+
+		describe 'onAdded()', ->
+
+			it 'expects callback function', ->
+				{onAdded} = @nNode
+				toThrow = (msg, fn) ->
+					expect(fn).to.throw TypeError, /callback function/, msg
+				toThrow 'void', -> onAdded()
+				toThrow 'null', -> onAdded null
+				toThrow 'number', -> onAdded 1
+				toThrow 'bool', -> onAdded true
+				toThrow 'string', -> onAdded 'nothing'
+				toThrow 'string', -> onAdded {}
+				toThrow 'string', -> onAdded []
+
+			it 'invokes callback for every created node item when finish() is called', ->
+				@nNode.onAdded spy = sinon.spy()
+				@nNode.addEntity @entity
+				expect(spy).to.not.have.been.called
+				@nNode.finish()
+				expect(spy).to.have.been.calledOnce
+				expect(spy.firstCall.args[0][ symbols.bEntity ]).to.equal @entity
+				spy.reset()
+				@nNode.finish()
+				expect(spy).to.not.have.been.called
+
+		it 'responds to `onRemoved` method', ->
+			expect(@nNode).to.respondTo 'onRemoved'
+
+		describe 'onRemoved()', ->
+
+			it 'expects callback function', ->
+				{onRemoved} = @nNode
+				toThrow = (msg, fn) ->
+					expect(fn).to.throw TypeError, /callback function/, msg
+				toThrow 'void', -> onRemoved()
+				toThrow 'null', -> onRemoved null
+				toThrow 'number', -> onRemoved 1
+				toThrow 'bool', -> onRemoved true
+				toThrow 'string', -> onRemoved 'nothing'
+				toThrow 'string', -> onRemoved {}
+				toThrow 'string', -> onRemoved []
+
+			it 'invokes callback for every removed node item when finish() is called', ->
+				@nNode.onRemoved spy = sinon.spy()
+				@nNode.addEntity @entity
+				expect(spy).to.not.have.been.called
+				@nNode.removeEntity @entity
+				expect(spy).to.not.have.been.called
+				@nNode.finish()
+				expect(spy).to.have.been.calledOnce
+				spy.reset()
+				@nNode.finish()
+				expect(spy).to.not.have.been.called
+
