@@ -6,57 +6,64 @@ fast = require 'fast.js'
 
 {Symbol} = require 'es6'
 bData = Symbol 'internal data of the action type'
+bPool = Symbol 'pool of actions for this type'
 
 symbols = require './symbols'
 Entity = require './entity'
 
-ActionType = (identifier) ->
-	unless identifier?
-		throw new TypeError 'expected identifier of an action type'
+ActionType = (name) ->
+	unless name?
+		throw new TypeError 'expected name of an action type'
 
 	if this instanceof ActionType
 		actionType = this
 	else
 		actionType = Object.create ActionType.prototype
 
-	actionType[ symbols.bName ] = identifier
+	actionType[ symbols.bName ] = name
 	actionType[ bData ] = {}
+	actionType[ bPool ] = []
 
-	return Object.freeze actionType
+	return actionType
 
-ActionType::trigger = (entity) ->
-	action = poolAction()
+Action = (@type, @data, @meta) ->
+	@origin = origin if arguments.length > 1
+	return this
+
+Action.prototype = Object.create Array.prototype
+Action::time = 0
+Action::type = null
+Action::data = null
+Action::meta = null
+Action::get = (prop) ->
+	this.data?[prop]
+Action::set = (prop, val) ->
+	this.data ?= {}
+	this.data[prop] = val
+	return this
+
+ActionType::trigger = (data, meta) ->
+	action = poolAction.call this
 	action.time = Date.now()
-
-	if entity instanceof Entity
-		argIndex = 1
-		action.entity = entity
-	else
-		argIndex = 0
-		action.entity = null
-
-	if arguments.length > argIndex and _.isPlainObject dataArg = arguments[argIndex]
-		action.get = (prop) ->
-			return dataArg[prop]
-
-	for val,i in arguments when i >= argIndex
-		action.push val
+	action.data = data
+	action.meta = meta
 
 	data = this[ bData ]
 	if data.buffer
-		target = data.buffer
+		data.buffer.push action
 	else
 		data.list ?= poolList()
-		target = data.list
+		data.list.push action
 
-	target.push action
-	return
+	return action
 
 ActionType::each = (iterator) ->
 	unless iterator and _.isFunction iterator
 		throw new TypeError 'expected iterator function for the each call'
 
 	data = this[ bData ]
+	# By setting buffer, the trigger method
+	# stores any further action in this
 	data.buffer ?= poolList()
 
 	return unless data.list?.length
@@ -70,8 +77,10 @@ ActionType::finish = ->
 	data = this[ bData ]
 	if data.list
 		for action in data.list
-			action.length = 0
-			poolAction action
+			action.data = null
+			action.meta = null
+			poolAction.call this, action
+
 		data.list.length = 0
 		poolList data.list
 		data.list = null
@@ -89,10 +98,10 @@ poolList = (add) ->
 	return [] unless listPool.length
 	return listPool.pop()
 
-actionPool = []
 poolAction = (add) ->
-	return actionPool.push add if add
-	return [] unless actionPool.length
-	return actionPool.pop()
+	pool = this[ bPool ]
+	return pool.push add if add
+	return new Action(this) unless pool.length
+	return pool.pop()
 
 module.exports = Object.freeze ActionType

@@ -182,26 +182,6 @@ describe 'Engine', ->
         it 'returns engine instance itself', ->
             expect(@engine.addSystems [mockSystem()]).to.equal @engine
 
-    describe 'instance.triggerAction()', ->
-
-        Action = require '../src/action'
-
-        beforeEach ->
-            @engine = Engine()
-
-        it 'should be a function', ->
-            expect(@engine).to.respondTo 'triggerAction'
-
-        it 'returns engine instance itself', ->
-            actual = @engine.triggerAction 'test'
-            expect(actual).to.equal @engine
-
-        it 'triggers action for specified action name', ->
-            @engine.triggerAction 'test', 20
-            actionType = @engine.getActionType 'test'
-            actionType.each (action) ->
-                expect(action[0]).to.equal 20
-
     describe 'instance.start()', ->
 
         beforeEach ->
@@ -345,6 +325,26 @@ describe 'Engine', ->
             @engine.update(10, 20)
             expect(spy).to.have.been.calledOnce.calledWith(10, 20).calledOn @engine
 
+    describe 'instance.triggerAction()', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'triggerAction'
+
+        it 'returns engine instance itself', ->
+            actual = @engine.triggerAction 'test'
+            expect(actual).to.equal @engine
+
+        it 'triggers action for specified action name', (done) ->
+            @engine.onAction 'test', -> # just to allow action trigger
+            @engine.triggerAction 'test', 20
+            actionType = @engine.getActionType 'test'
+            actionType.each (action) ->
+                expect(action.data).to.equal 20
+                done()
+
     describe 'instance.onAction', ->
 
         beforeEach ->
@@ -379,17 +379,25 @@ describe 'Engine', ->
             expect(@engine.onAction('name', ->)).to.equal @engine
 
         it 'invokes callback for each triggered action when update is called', ->
-            @engine.onAction 'test', spy1 = sinon.spy()
-            @engine.onAction 'test', spy2 = sinon.spy()
-            @engine.triggerAction 'test', data1 = alpha: true, beta: false
-            @engine.triggerAction 'test', data2 = alpha: false, beta: true
+
+            data = alpha: true, beta: false
+            meta = alpha: false, beta: true
+
+            spy = sinon.spy()
+            expected = -> i = 0; return (action) ->
+                spy arguments...
+                if i is 0
+                    expect(action.data).to.equal data
+                else if i is 1
+                    expect(action.meta).to.equal meta
+                i++
+
+            @engine.onAction 'test', expected()
+            @engine.onAction 'test', expected()
+            @engine.triggerAction 'test', data
+            @engine.triggerAction 'test', null, meta
             @engine.update()
-            expect(spy1).to.have.been.calledTwice
-            expect(spy2).to.have.been.calledTwice
-            expect(spy1.firstCall.args[0].get('alpha')).to.be.true
-            expect(spy2.firstCall.args[0].get('beta')).to.be.false
-            expect(spy2.secondCall.args[0].get('alpha')).to.be.false
-            expect(spy1.secondCall.args[0].get('beta')).to.be.true
+            expect(spy.callCount).to.equal 4
 
     describe 'instance.size', ->
 

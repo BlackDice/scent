@@ -4,68 +4,7 @@
 
 Scent is framework heavily based on the [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. It's simplified in some cases and made more strict where it matters. Thanks to the environments like NodeJS, you can use Scent on the game server too and share most of code.
 
-Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all of its properties in one big messy object. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
-
-
-
-<!-- toc -->
-
-* [Disclaimer](#disclaimer)
-  * [In development](#in-development)
-* [Installation and basic usage](#installation-and-basic-usage)
-* [Terminology](#terminology)
-  * [Type prefix](#type-prefix)
-  * [No classes](#no-classes)
-  * [Error handling](#error-handling)
-  * [EcmaScript 6 support](#ecmascript-6-support)
-    * [Symbol usage](#symbol-usage)
-* [How it works](#how-it-works)
-  * [Defining the component](#defining-the-component)
-    * [Save component type](#save-component-type)
-    * [Marker component](#marker-component)
-    * [Identity number](#identity-number)
-    * [Exposed properties](#exposed-properties)
-    * [Working with components](#working-with-components)
-    * [Dispose component](#dispose-component)
-    * [Validating types](#validating-types)
-  * [Entity as component collection](#entity-as-component-collection)
-    * [Adding components](#adding-components)
-    * [Retrieving components](#retrieving-components)
-    * [Removing components](#removing-components)
-    * [Chaining commands](#chaining-commands)
-    * [Change notifications](#change-notifications)
-    * [Timestamp of change](#timestamp-of-change)
-  * [Node is the hero](#node-is-the-hero)
-    * [Define the node](#define-the-node)
-    * [Node meets entity](#node-meets-entity)
-    * [Accessing nodes](#accessing-nodes)
-    * [Access to components](#access-to-components)
-  * [Actions in the field](#actions-in-the-field)
-    * [Defining action type](#defining-action-type)
-    * [Creating actions](#creating-actions)
-    * [Processing actions](#processing-actions)
-    * [Getting action data](#getting-action-data)
-    * [Trigger with data object](#trigger-with-data-object)
-    * [Action timestamp](#action-timestamp)
-    * [Immutable actions](#immutable-actions)
-  * [System creates logic](#system-creates-logic)
-    * [Defining the system](#defining-the-system)
-  * [Engine smells good](#engine-smells-good)
-    * [Create the engine](#create-the-engine)
-    * [Update cycle](#update-cycle)
-    * [Action in the engine](#action-in-the-engine)
-    * [Access to nodes](#access-to-nodes)
-    * [Entity management](#entity-management)
-    * [Add the systems](#add-the-systems)
-    * [Start the engine](#start-the-engine)
-    * [Injections for system](#injections-for-system)
-    * [Extensible engine](#extensible-engine)
-    * [Multiple engines?](#multiple-engines)
-* [Advertisement](#advertisement)
-* [Tests](#tests)
-
-<!-- toc stop -->
-
+Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all of its properties and method in one big messy blob. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
 
 ## Disclaimer
 
@@ -73,7 +12,7 @@ Please note that this is far from complete solution of *how to make the game*. T
 
 ### In development
 
-Framework is being actively used in development of our game. It will be improved and changed over time as need arise. Check out the [contributing file](contributing.md) if you want to help with something.
+Framework is being actively used in development of our game. It will be improved and changed over time as our need arise. Check out the [contributing file](contributing.md) if you want to help with something.
 
 There is no Roadmap for the framework yet, it mostly depends on ours needs in the game. One essential feature is still missing compared to Ash - Finite State Machine. This will be implemented for sure in relatively short time frame.
 
@@ -108,12 +47,14 @@ There is notation for variables holding known types defined by this framework. A
 	cWeapon      component type
 	eCharacter   entity instance
 	nStructure   node type
-	aMove        action container
+	aMove        action type
 	bName        symbol reference
 
 ### No classes
 
 Scent is completely class-less framework. There is no inheritance of any framework part. **Do not use** `new` keyword when using the framework functions. It will not change it's behavior in any way, but internally you will be creating object that is thrown away. For performance reasons there are no checks if you have used `new` keyword.
+
+  *To be removed....*
 
 ### Error handling
 
@@ -123,7 +64,7 @@ There is minimum of runtime errors (except unexpected ones). Instead the [debug]
 
 ### EcmaScript 6 support
 
-Framework is using some of the features as defined by EcmaScript 6 draft. Since the implementation in current environments are not really production ready, we are using shims. All used features are exported in `src/es6-support` file to easily allow replacement by another shim implementation if needed.
+Framework is using some of the features as defined by EcmaScript 6 draft. Since the implementation in current environments are not really production ready, we are using shims.
 
 #### Symbol usage
 
@@ -133,7 +74,8 @@ Acknowledged notation exists for the symbols, it uses `@@` as prefix. Anytime wh
 
 ## How it works
 
-Basically you should define some *component types*, created instances of them, set data and add them to different *entities*. Then you can let *systems* do their job with tremendous help of *nodes* and can be directed by *actions*. In the end, everything is nicely wrapped by the *engine*.
+Basically you should define some *component types*, create instances of them, set data and add them to different *entities*. Then you can let *systems* do their job with tremendous help of *nodes* and
+*actions*. In the end, everything is nicely wrapped by the *engine*.
 
 ### Defining the component
 
@@ -372,11 +314,11 @@ Node item is directly linked to entity that is stored into `@@entity` property. 
 
 ### Actions in the field
 
-Before we jump into real game mechanics, let's introduce piece of puzzle called Action. Many games are built upon some kind of events happening in time. Usually they are based on user interaction or  generated based on some rules (eg. moving npc character, starting rain...).
+Before we jump into real game mechanics, let's introduce piece of puzzle called Action.  generally  are built upon some kind of events happening in time. Usually they are based on user interaction or  generated based on some rules (eg. moving npc character, starting rain...).
 
 #### Defining action type
 
-Each action type has to be named to be easily identifiable. This can be also used for multiplayer game purposes of transmitting actions across network.
+Each action type has to be named to be easily identifiable. This can be also used for multi-player game purposes of transmitting actions across network. However the type of variable is not enforced and you might even use object as identifier.
 
 	aMove = Action 'move'
 
@@ -384,15 +326,19 @@ This creates the container for list of actions. The list is private and cannot b
 
 #### Creating actions
 
-To create action and add it to the list, simply call `trigger` method.
+To create action and add it to the list, simply call `trigger` method. First argument is expected to be data object or actually anything you like. It is not managed in any way, just made available to you in `data` property on action instance.
 
-	aMove.trigger x, y, z
+	aMove.trigger x: 10, y: 20, z: 30
 
-Any number of arguments is supported and these are stored within the action. Additionally if the first argument is actual entity, this will be taken out of usual arguments and made available as `entity` property on action item.
+Also second argument can be supplied and it's content will be available in `meta` property on action object. This can be used to store data that might not be transmitted over network.
+
+  aMove.trigger
+    {x: 10, y: 20, z: 30}
+    {origin: this}
 
 #### Processing actions
 
-Action processing should be done in the batch. This conforms to paradigm established by nodes and fits into general sense of the framework. Currently there are no means to access single actions from the list nor remove them.
+Actions are not processed immediately in time of triggering. This conforms to paradigm established by nodes and fits into general sense of the framework. Currently there are no means to access single actions from the list nor remove them. You can only iterate list of actions.
 
 	aMove.each (action) ->
 
@@ -400,35 +346,18 @@ Note that there is no support for context of invoked callbacks. In case you need
 
 #### Getting action data
 
-Most of the actions are probably useless without any additional data. The actual action object is array-like object meaning that data can be accessed by zero-based index in the order they were passed when triggered.
+As mentioned before, all data are simply made accessible through properties on action instance when iterating.
 
-	aMove.trigger entity, 10, 20, 30
 	aMove.each (action) ->
-		action.entity
-		action[0] is 10
-		action[2] is 30
+		action.data.x is 10
+		action.data.z is 30
+		action.meta.origin is <Object>
 
-	# or like this...
-
-	[x, y, z] = action
-
-This is handy if you have just couple of arguments. In case more of complex structures, it might difficult to remember order of the arguments.
-
-Word of warning. Don't use action object outside of the scope of the `each` method. Its data will be thrown away eventually and object will be reused thus causing you unforeseen consequences.
-
-#### Trigger with data object
-
-Second (more convenient) method of accessing data is based on passing object in the second argument of an `trigger` method. Doing it like that will give you access to that object properties through `get` method.
-
-	aMove.trigger x: 10, y: 20, z: 30
-	aMove.each (action) ->
-		action.get 'x'
-		action.get 'y'
-		action[0].x # works too
+Word of warning. Don't use action object outside of the scope of the `each` method. When the `finish()` method is called (see below), the properties of action object are reset. You can keep actual data/meta objects if you need, but not the actual action.
 
 #### Action timestamp
 
-Often you might need to know when was action triggered so you can apply some time calculations. Each action object has `time` property containing environment timestamp.
+Often you might need to know when was action triggered so you can apply some time calculations. Each action object has `time` property containing environment timestamp set when actual trigger happened.
 
 	lastTime = Date.now()
 	aMove.each (action) ->
@@ -436,7 +365,7 @@ Often you might need to know when was action triggered so you can apply some tim
 
 #### Immutable actions
 
-Internal list of actions has to be immutable during its processing. Means all systems and other pieces of code should obtain exactly same list of actions at the current game loop. To achieve this behavior, an action type creates internal buffer of actions that were triggered after first call to `each` occurred. When actions are processed fully, just call `finish` method. Two things will happen:
+Internal list of actions is immutable during the processing. All systems and other pieces of code will obtain exactly same list of actions at the current game loop. To achieve this behavior, an action type creates internal buffer of actions that were triggered after first call to `each` occurred. When actions are processed fully, just call `finish()` method. Two things will happen:
 
  * current list is completely cleared
  * internal buffer of actions is flushed to current list
@@ -496,7 +425,7 @@ You can pass any arguments you like in there. Those will be simply handed over t
 
 #### Action in the engine
 
-Engine wraps action functionality and provides much easier interface than the one provided above. As the bonus, the name of action type doesn't need to be string since ES6 Map is used underneath. You can use any object or identifier you like.
+Engine wraps action functionality and provides somewhat easier interface than the one provided above. As the bonus, the name of action type doesn't need to be string since ES6 Map is used underneath. You can use any object or identifier you like.
 
 ##### Triggering actions
 
@@ -508,13 +437,15 @@ Be aware that even if you create such action in the middle of update loop, it wi
 
 ##### Processing actions
 
-To make the system (or any other piece of code) to process action, simply call `onAction` method. This can be done anywhere. Basically it registers your callback function and it will be called when there are some actions triggered at the beginning of update loop.
+To make the system (or any other piece of code) to process action, simply call `onAction` method. This can be done anywhere. Basically it registers your callback function and it will be called for every action available whenever it is appropriate.
 
 	engine.onAction 'move', (action) ->
 
-Once single action type run through all registered callback functions, the `finish()` method of action type will be called which effectively clears the list of processed actions.
+These callbacks are invoked at the **beginning of update loop**. Even before node types are updated. You actions can easily create or modify entities and node types will be able to see such changes.
 
-Note that trying to trigger action without single registered handler will basically throw away such actions to prevent stacking up in memory without anyone interested.
+Once single action type has run through all registered callback functions, the `finish()` method of action type will be called which effectively clears the list of processed actions and prepares action types for the next round.
+
+Note that trying to trigger action without single registered handler will basically throw away such actions. This is to prevent stacking up in memory without anyone interested.
 
 #### Access to nodes
 
@@ -527,15 +458,15 @@ Engine handles memory map of node types for you. All node types you access throu
 Engine keeps the list of all entities for you. It also automatically informs created node types about these. All you need to do is call method `addEntity`.
 
 	eCorporateBuilding = engine.addEntity [
-		building = do cBuilding
-		foundation = do cFoundation
+		building = new cBuilding
+		foundation = new cFoundation
 	]
 	building.floors = 10
 	foundation.material = 'stone'
 
 When you call `@@dispose` method of entity instance, it will be removed from engine and relevant nodes as well.
 
-Keep in mind that entity is not added to nodes right away. Such changes are queued up and will be processed at the end of update cycle. This is to ensure consistent state of available nodes.
+Keep in mind that entity is not added to nodes right away. Such changes are queued up and will be processed at the beginning of update cycle. This is to ensure consistent state of available nodes during update loop.
 
 #### Add the systems
 
@@ -543,7 +474,7 @@ System initializers are added to engine first. These are not invoked till the en
 
 	engine.addSystem sInput
 
-Above method supports only single system passed in. You have to call it for each system separately. For the sake of simplicity, there is also `addSystems` method which expects array of system initializers.
+Above method supports only single system passed in. You have to call it for each system separately. For the sake of simplicity, there is also `addSystems` method which accepts array of system initializers.
 
 	engine.addSystems [sInput, sDisply, sMovement]
 

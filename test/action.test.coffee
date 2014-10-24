@@ -11,9 +11,9 @@ describe 'Action', ->
 	it 'should be a function', ->
 		expect(Action).to.be.a "function"
 
-	it 'expects identifier of action in the first argument', ->
+	it 'expects name of action in the first argument', ->
 		toThrow = (msg, fn) ->
-			expect(fn).to.throw TypeError, /expected identifier/, msg
+			expect(fn).to.throw TypeError, /expected name/, msg
 		toThrow 'void', Action
 		toThrow 'null', -> Action null
 
@@ -33,18 +33,15 @@ describe 'Action', ->
 		it 'passes `Action.prototype.isPrototypeOf` check', ->
 			expect(Action.prototype.isPrototypeOf Action @validName).to.be.true
 
-		it 'forbids to add custom properties to itself', ->
+		it 'should provide name of action type in @@name property', ->
 			aAction = Action @validName
-			aAction.customProperty = true
-			expect(aAction).to.not.have.property "customProperty"
-
-		it 'should provide name of action type in read-only @@name property', ->
-			aAction = Action @validName
-			aAction[ symbols.bName ] = "fakeName"
 			expect(aAction[ symbols.bName ]).to.equal @validName
 
 		it 'responds to `trigger` method', ->
 			expect(Action @validName).to.respondTo 'trigger'
+
+		it 'triggered action object is returned from `trigger` call', ->
+			expect(Action(@validName).trigger()).to.be.an "object"
 
 		it 'responds to `each` method', ->
 			expect(Action @validName).itself.to.respondTo 'each'
@@ -66,60 +63,50 @@ describe 'Action', ->
 
 		it 'allows to loop triggered actions with each method', ->
 			aType = Action @validName
-			aType.trigger Entity()
-			aType.trigger Entity()
+			aType.trigger()
+			aType.trigger()
 			aType.each spy = sinon.spy()
-			expect(spy).to.have.been
-				.calledTwice
-				.calledOn spy
-				.calledWith sinon.match.array
-
-		it 'provides `entity` property with entity object passed in trigger call', ->
-			aType = Action @validName
-			aType.trigger entity = Entity()
-			aType.each (action) ->
-				expect(action.entity).to.equal entity
-
-		it 'sets `entity` property to null if first argument is not entity', ->
-			aType = Action @validName
-			aType.trigger 1
-			aType.each (action) ->
-				expect(action.entity).to.equal null
+			expect(spy).to.have.been.calledTwice
 
 		it 'provides `time` property equal to timestamp of action triggering', ->
 			aType = Action @validName
 			clock = sinon.useFakeTimers expected = Date.now()
-			aType.trigger Entity()
+			aType.trigger()
 			clock.tick 500
 			aType.each (action) ->
 				expect(action.time).to.equal expected
 			clock.restore()
 
-		it 'provides additional arguments from trigger call during loop as an array', ->
+		it 'provides `type` property equal to owning action type', ->
 			aType = Action @validName
-			aType.trigger Entity(), a = 10, b = false, c = "test"
+			aType.trigger()
 			aType.each (action) ->
-				expect(action.length).to.equal 3
-				expect(action[0]).to.equal a
-				expect(action[1]).to.equal b
-				expect(action[2]).to.equal c
+				expect(action).to.have.property 'type', aType
 
-		it 'shifts arguments by one if passed entity is invalid', ->
+		it 'provides `data` property equal to first argument from trigger call', ->
 			aType = Action @validName
-			aType.trigger 10, 20
+			aType.trigger expected = a: 10, b: false, c: "test"
 			aType.each (action) ->
-				expect(action.length).to.equal 2
-				expect(action[0]).to.equal 10
-				expect(action[1]).to.equal 20
+				expect(action).to.have.property 'data', expected
 
-		it 'provides properties of first argument object through `get` method', ->
+		it 'provides `meta` property equal to second argument from trigger call', ->
 			aType = Action @validName
-			aType.trigger Entity(), expected = a: 10, b: false, c: "test"
+			aType.trigger null, expected = a: 10, b: false, c: "test"
 			aType.each (action) ->
-				expect(action).itself.to.respondTo 'get'
-				expect(action.get 'a').to.equal expected.a
-				expect(action.get 'b').to.equal expected.b
-				expect(action.get 'c').to.equal expected.c
+				expect(action).to.have.property 'meta', expected
+
+		it 'provides `get` method that allows to retrieve property value from data argument', ->
+			aType = Action @validName
+			action = aType.trigger expected = a: 10, b: false, c: "test"
+			expect(action.get('a')).to.equal expected.a
+			expect(action.get('b')).to.equal expected.b
+			expect(action.get('c')).to.equal expected.c
+
+		it 'provides `set` method for setting properties on data object', ->
+			aType = Action @validName
+			action = aType.trigger()
+			action.set('test', expected = 200)
+			expect(action.get('test')).to.equal expected
 
 		it 'clears the list when `finish` is invoked', ->
 			aType = Action @validName

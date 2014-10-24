@@ -39,17 +39,13 @@ Engine = (initializer) ->
 			actionMap.set actionName, actionType
 		return actionType
 
-	engine.triggerAction = (actionName) ->
+	engine.triggerAction = (actionName, data, meta) ->
 		actionType = engine.getActionType actionName
 		unless actionHandlerMap.has actionType
 			log "Action `%s` cannot be triggered. Use onAction method to add handler first.", actionName
 			return engine
 
-		if arguments.length > 0
-			args = (arg for arg,i in arguments when i > 0)
-			fast.apply actionType.trigger, actionType, args
-		else
-			actionType.trigger()
+		actionType.trigger(data, meta)
 		return engine
 
 	engine.onAction = (actionName, callback) ->
