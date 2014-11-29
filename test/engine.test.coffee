@@ -1,5 +1,6 @@
-{expect, sinon, createMockComponent, mockSystem} = require './setup'
+{expect, sinon, resetComponentIdentities, mockSystem} = require './setup'
 Engine = require '../src/engine'
+Component = require '../src/component'
 symbols = require '../src/symbols'
 
 NoMe = require 'nome'
@@ -7,10 +8,11 @@ Lill = require 'lill'
 
 describe 'Engine', ->
 
-    before ->
-        @cAlphaComponent = createMockComponent('alpha')
-        @cBetaComponent = createMockComponent('beta')
-        @cGamaComponent = createMockComponent('gama')
+    beforeEach ->
+        resetComponentIdentities()
+        @cAlphaComponent = Component 'alpha'
+        @cBetaComponent = Component 'beta'
+        @cGamaComponent = Component 'gama'
 
     it 'should be a function', ->
         expect(Engine).to.be.a "function"
@@ -67,6 +69,7 @@ describe 'Engine', ->
             expect(nTest1).to.be.an 'object'
             expect(nTest1).to.respondTo 'each'
             expect(nTest1).to.respondTo 'updateEntity'
+            expect(nTest1).to.respondTo 'onRemoved'
 
             expect(nTest1).to.equal nTest2
             expect(nTest1).to.not.equal nTest3
@@ -85,19 +88,18 @@ describe 'Engine', ->
             expect(entity).to.respondTo 'has'
             expect(entity).to.respondTo 'get'
             expect(entity2 = @engine.addEntity()).to.not.equal entity
-            do entity[ symbols.bDispose ]
-            do entity2[ symbols.bDispose ]
+            entity.dispose()
+            entity2.dispose()
 
         it 'should return entity with components added', ->
-            alpha = do @cAlphaComponent
-            beta = do @cBetaComponent
-            beta2 = do @cBetaComponent
-            entity = @engine.addEntity [alpha, beta, beta2]
+            alpha = new @cAlphaComponent
+            beta = new @cBetaComponent
+            entity = @engine.addEntity [alpha, beta]
 
             expect(entity.size).to.equal 2
             expect(entity.has @cAlphaComponent).to.be.true
-            expect(entity.get @cBetaComponent).to.equal beta2
-            do entity[ symbols.bDispose ]
+            expect(entity.get @cBetaComponent).to.equal beta
+            entity.dispose()
 
     describe 'instance.entityList', ->
 
@@ -108,7 +110,7 @@ describe 'Engine', ->
             expect(@engine.entityList).to.be.an "object"
             expect(Lill.isAttached @engine.entityList).to.be.true
 
-        it 'contains all added entities', ->
+        it 'contains engine owned entities', ->
             entity1 = @engine.addEntity()
             entity2 = @engine.addEntity()
             expect(Lill.has @engine.entityList, entity1).to.be.true
@@ -116,7 +118,7 @@ describe 'Engine', ->
 
         it 'removes disposed entities', ->
             entity = @engine.addEntity()
-            do entity[ symbols.bDispose ]
+            entity.dispose()
             expect(Lill.has @engine.entityList, entity).to.be.false
 
     describe 'instance.addSystem()', ->
@@ -261,10 +263,10 @@ describe 'Engine', ->
             @nAlphaNode = @engine.getNodeType [@cAlphaComponent]
             @nBetaNode = @engine.getNodeType [@cBetaComponent]
             @nGamaNode = @engine.getNodeType [@cGamaComponent]
-            @eTestEntity = @engine.addEntity [do @cAlphaComponent, do @cBetaComponent]
+            @eTestEntity = @engine.addEntity [new @cAlphaComponent, new @cBetaComponent]
 
         afterEach ->
-            do @eTestEntity[ symbols.bDispose ]
+            @eTestEntity.dispose()
 
         it 'should be a function', ->
             expect(@engine).to.respondTo 'update'
@@ -278,14 +280,14 @@ describe 'Engine', ->
 
         it 'removes disposed entity from nodes', ->
             @engine.update()
-            do @eTestEntity[ symbols.bDispose ]
+            @eTestEntity.dispose()
             expect(@nAlphaNode.size).to.equal 1, 'alpha before update'
             expect(@nBetaNode.size).to.equal 1, 'beta before update'
             @engine.update()
             expect(@nAlphaNode.size).to.equal 0, 'alpha after update'
             expect(@nBetaNode.size).to.equal 0, 'alpha after update'
 
-        it 'updates node types for updated entities', ->
+        it 'removes incompatible entity from nodes', ->
             @engine.update()
             @eTestEntity.remove @cAlphaComponent
             expect(@nAlphaNode.size).to.equal 1, 'before update'
@@ -300,6 +302,12 @@ describe 'Engine', ->
             @engine.update()
             expect(spy1).to.have.been.calledOnce
             expect(spy2).to.have.been.calledOnce
+
+        it 'allows to modify entity in Node.onAdded handler', (done) ->
+            @nAlphaNode.onAdded =>
+                @eTestEntity.remove(@cBetaComponent)
+            @nBetaNode.onRemoved -> done()
+            @engine.update()
 
     describe 'instance.onUpdate', ->
 

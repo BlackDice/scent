@@ -23,59 +23,21 @@ Engine = (initializer) ->
 	engine = Object.create null
 	isStarted = no
 
-	# Memory map of node types used by this engine
-	nodeMap = new Map
+	## ENTITIES
 
-	engine.getNodeType = (componentTypes) ->
-		return Node componentTypes, nodeMap
-
-	actionMap = new Map
-	actionHandlerMap = new Map
-
-	engine.getActionType = (actionName, noCreate) ->
-		unless actionType = actionMap.get actionName
-			return null if noCreate is yes
-			actionType = new Action actionName
-			actionMap.set actionName, actionType
-		return actionType
-
-	engine.triggerAction = (actionName, data, meta) ->
-		actionType = engine.getActionType actionName
-		unless actionHandlerMap.has actionType
-			log "Action `%s` cannot be triggered. Use onAction method to add handler first.", actionName
-			return engine
-
-		actionType.trigger(data, meta)
-		return engine
-
-	engine.onAction = (actionName, callback) ->
-		unless _.isString actionName
-			throw new TypeError 'expected name of action for onAction call'
-		unless _.isFunction callback
-			throw new TypeError 'expected callback function for onAction call'
-
-		actionType = engine.getActionType actionName
-		unless map = actionHandlerMap.get actionType
-			map = [callback]
-			actionHandlerMap.set actionType, map
-		else
-			map.push callback
-		return engine
-
-	# List of all entities in this engine
 	engine.entityList = Lill.attach {}
 
-	# List of entities that were updated
-	updatedEntities = Lill.attach {}
-
+	# Only method to add entity to engine
 	engine.addEntity = (components) ->
 		entity = Entity components
 		Lill.add engine.entityList, entity
-		Lill.add updatedEntities, entity
+		addedEntities.push entity
 		return entity
 
 	Object.defineProperty engine, 'size', get: ->
 		Lill.getSize engine.entityList
+
+	## SYSTEMS
 
 	systemList = []
 	engine.addSystem = (systemInitializer) ->
@@ -123,52 +85,160 @@ Engine = (initializer) ->
 		return this
 
 	engine.update = NoMe ->
-		actionTypes = actionHandlerMap.keys()
-		actionTypeEntry = actionTypes.next()
-		while not actionTypeEntry.done
-			actionType = actionTypeEntry.value
-			callbacks = actionHandlerMap.get actionType
-			for callback in callbacks
-				actionType.each callback
-			actionType.finish()
-			actionTypeEntry = actionTypes.next()
-
-		nodeTypes = nodeMap.values()
-		nodeTypeEntry = nodeTypes.next()
-		while not nodeTypeEntry.done
-			nodeType = nodeTypeEntry.value
-			updateNodeTypes nodeType
-			nodeType.finish()
-			nodeTypeEntry = nodeTypes.next()
-
-		Lill.clear updatedEntities
+		processActions()
+		processNodeTypes()
 
 	engine.onUpdate = fast.bind engine.update.notify, engine.update
 
-	nomeDisposed = Entity.disposed.notify ->
-		# TODO: Possible error if disposing entity that is not
-		# in this engine, it would be added to it like this!
-		Lill.add updatedEntities, this
+	## NODES
+
+	# Memory map of node types used by this engine
+	nodeMap = {}
+
+	# List of node types to make update loop faster
+	nodeTypes = Lill.attach {}
+
+	# Method to obtain node type object. It expects at least one component
+	# type or array of multiple ones.
+	engine.getNodeType = (componentTypes) ->
+
+		validTypes = Node.validateComponentTypes componentTypes
+
+		unless validTypes?.length
+			throw new TypeError 'specify at least one component type to getNodeType'
+
+		# calculate hash of component types
+		hash = fast.reduce validTypes, hashComponent, 1
+
+		# return existing node type from the map
+		return nodeType if nodeType = nodeMap[hash]
+
+		nodeType = new Node componentTypes
+		nodeMap[hash] = nodeType
+		Lill.add nodeTypes, nodeType
+		return nodeType
+
+	hashComponent = (result, componentType) ->
+		result *= componentType.typeIdentity
+
+	addedEntities = []
+	updatedEntities = []
+	disposedEntities = []
+
+	processNodeTypes = ->
+		updateNodeType Node::addEntity, addedEntities
+		updateNodeType Node::removeEntity, disposedEntities
+		updateNodeType Node::updateEntity, updatedEntities
+		Lill.each nodeTypes, finishNodeType
+
+		# something has been modified during node type post processing
+		# run recursive call to manage this
+		if addedEntities.length or disposedEntities.length or updatedEntities.length
+			return processNodeTypes()
+
+		entity.release() for entity in releasedEntities
+		releasedEntities.length = 0
+		return
+
+	releasedEntities = []
+
+	finishNodeType = (nodeType) ->
+		nodeType.finish()
+
+	updateNodeType = (nodeMethod, entities) ->
+		return unless entities.length
+		execMethod = (nodeType) ->
+			nodeMethod.call nodeType, this
+		for entity in entities
+			Lill.each nodeTypes, execMethod, entity
+			releasedEntities.push entity
+		entities.length = 0
+		return
+
+	nomeEntityDisposed = Entity.disposed.notify ->
+		return unless Lill.has engine.entityList, this
+
+		if ~(idx = addedEntities.indexOf this)
+			addedEntities.splice idx, 1
+
+		if ~(idx = updatedEntities.indexOf this)
+			updatedEntities.splice idx, 1
+
+		disposedEntities.push this
 		Lill.remove engine.entityList, this
 
-	nomeAdded = Entity.componentAdded.notify ->
-		Lill.add updatedEntities, this
-	nomeRemoved = Entity.componentRemoved.notify ->
-		Lill.add updatedEntities, this
+	nomeComponentAdded = Entity.componentAdded.notify ->
+		return unless Lill.has engine.entityList, this
+
+		unless ~(addedEntities.indexOf this) or ~(updatedEntities.indexOf this)
+			updatedEntities.push this
+
+	nomeComponentRemoved = Entity.componentRemoved.notify ->
+		return unless Lill.has engine.entityList, this
+
+		unless ~(addedEntities.indexOf this) or ~(updatedEntities.indexOf this)
+			updatedEntities.push this
+
+	## ACTIONS
+
+	actionMap = new Map
+	actionHandlerMap = new Map
+	actionTypes = Lill.attach {}
+
+	engine.getActionType = (actionName, noCreate) ->
+		unless actionType = actionMap.get actionName
+			return null if noCreate is yes
+			actionType = new Action actionName
+			actionMap.set actionName, actionType
+			Lill.add actionTypes, actionType
+		return actionType
+
+	engine.triggerAction = (actionName, data, meta) ->
+		actionType = engine.getActionType actionName
+		unless actionHandlerMap.has actionType
+			log "Action `%s` cannot be triggered. Use onAction method to add handler first.", actionName
+			return engine
+
+		actionType.trigger(data, meta)
+		return engine
+
+	engine.onAction = (actionName, callback) ->
+		unless _.isString actionName
+			throw new TypeError 'expected name of action for onAction call'
+		unless _.isFunction callback
+			throw new TypeError 'expected callback function for onAction call'
+
+		actionType = engine.getActionType actionName
+		unless map = actionHandlerMap.get actionType
+			map = [callback]
+			actionHandlerMap.set actionType, map
+		else
+			map.push callback
+		return engine
+
+	processActions = ->
+		Lill.each actionTypes, processActionType
+
+	processActionType = (actionType) ->
+		callbacks = actionHandlerMap.get actionType
+		for callback in callbacks
+			actionType.each callback
+		actionType.finish()
 
 	engine[ symbols.bDispose ] = ->
-		Entity.disposed.denotify nomeDisposed
-		Entity.componentAdded.denotify nomeAdded
-		Entity.componentRemoved.denotify nomeRemoved
-		nodeMap.clear()
+		Entity.disposed.denotify nomeEntityDisposed
+		Entity.componentAdded.denotify nomeComponentAdded
+		Entity.componentRemoved.denotify nomeComponentRemoved
+		nodeTypes.length = 0
 		systemList.length = 0
 		injections.clear()
-		Lill.detach updatedEntities
+		Lill.detach actionTypes
+		actionMap.clear()
+		actionHandlerMap.clear()
+		addedEntities.length = 0
+		updatedEntities.length = 0
+		disposedEntities.length = 0
 		isStarted = no
-
-	updateNodeTypes = (nodeType) ->
-		Lill.each updatedEntities, (entity) ->
-			nodeType.updateEntity entity
 
 	initializeSystemAsync = (systemInitializer, cb) ->
 		handleError = (fn) ->

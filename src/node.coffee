@@ -1,137 +1,153 @@
 'use strict'
 
 log = (require 'debug') 'scent:node'
+
 _  = require 'lodash'
 fast = require 'fast.js'
-
-{Symbol, Map} = require 'es6'
-
 Lill = require 'lill'
 
-symbols = require './symbols'
-{bDispose, bType} = symbols
-bList = Symbol 'list of components required by node'
-bPool = Symbol 'pool of disposed nodes ready to use'
-bData = Symbol 'internal data for node'
+{Symbol, Map} = require 'es6'
+Component = require './component'
 
-Node = (componentTypes, storageMap) ->
+{bType} = symbols = require './symbols'
+bData = Symbol 'internal data for the nodelist'
 
-	# Wrap the value into array if none passed
-	componentTypes = [componentTypes] unless _.isArray componentTypes
+# Constructor function to create node type with given set
+# of component types. Used internally.
+NodeType = (componentTypes) ->
 
-	# Filter out duplicates and invalid component types
-	componentTypes = _(componentTypes).uniq().filter(validateComponentType).value()
+	unless this instanceof NodeType
+		return new NodeType componentTypes
 
-	unless componentTypes.length
-		throw new TypeError 'require at least one component for node'
+	componentTypes = NodeType.validateComponentTypes componentTypes
 
-	if storageMap and not validateStorageMap storageMap
-		throw new TypeError 'valid storage map expected in second argument'
+	unless componentTypes?.length
+		throw new TypeError 'node type requires at least one component type'
 
-	# Calculate hash based on prime numbers
-	hash = fast.reduce componentTypes, hashComponent, 1
+	this[ bData ] = {
+		list: componentTypes
+		item: createNodeItem(this, componentTypes)
+		pool: fast.bind poolNodeItem, null, []
+		ref: Symbol 'node('+componentTypes.map(mapComponentName).join(',')+')'
+		added: false
+		removed: false
+	}
 
-	# Return existing node list
-	return nodeList if storageMap and nodeList = storageMap.get hash
+	return Lill.attach this
 
-	# Create actual node list
-	nodeList = new NodeList componentTypes
+# Method checks if entity fulfills component types constraints
+# defined for node type.
+NodeType::entityFits = (entity) ->
+	return false if entity[ symbols.bDisposing ]
+	for componentType in this[ bData ].list
+		return false unless entity.has componentType
+	return true
 
-	Lill.attach nodeList
-
-	storageMap.set hash, nodeList if storageMap
-	Object.freeze nodeList
-	return nodeList
-
-NodeList = (componentTypes) ->
-	this[ bList ] = componentTypes
-	this[ bPool ] = []
-	this[ bData ] = {}
-	return this
-
-NodeList::addEntity = ->
+# Method is used to add new entity to the list. It rejects
+# entity that is already on the list or if required components
+# are missing.
+NodeType::addEntity = ->
+	data = this[ bData ]
 	entity = validateEntity arguments[0]
-	map = entity[ symbols.bNodes ]
 
-	return this if map.has this
+	# entity already watched by this node type or
+	# it doesn't fit in here
+	if entity[ data.ref ] or not @entityFits entity
+		return this
 
-	if (pool = this[ bPool ]).length
-		nodeItem = pool.pop()
-	else
-		nodeItem = Object.create null
-		nodeItem[ bType ] = this
+	# grab node item from pool or create new one
+	unless nodeItem = data.pool()
+		nodeItem = new data.item
 
-	for componentType in this[ bList ]
-		return this unless component = entity.get componentType
-		nodeItem[componentType[ symbols.bName ]] = component
-
-	# Store entity within node item
+	# mutual references
 	nodeItem[ symbols.bEntity ] = entity
+	entity[ data.ref ] = nodeItem
 
-	# Store node item references
-	map.set this, nodeItem
+	# store node item to the node type
 	Lill.add this, nodeItem
 
-	if added = this[ bData ].added
-		Lill.add added, nodeItem
+	# if there are handlers for onAdded, remember node item
+	Lill.add added, nodeItem if added = data.added
 
 	return this
 
-NodeList::updateEntity = ->
+# Method to remove entity from the node type if it no longer
+# fits in the node type constrains.
+NodeType::removeEntity = ->
+	data = this[ bData ]
 	entity = validateEntity arguments[0]
-	map = entity[ symbols.bNodes ]
 
-	return this.addEntity entity unless nodeItem = map.get this
+	return this unless nodeItem = entity[ data.ref ]
+	return this if @entityFits entity
 
-	for componentType in this[ bList ]
-		unless component = entity.get componentType
-			return this.removeEntity entity
-		nodeItem[componentType[ symbols.bName ]] = component
+	Lill.remove this, nodeItem
+	delete entity[ data.ref ]
+
+	# if anything watches for removed nodes the actual pooling is postponed
+	if removed = data.removed
+		Lill.add removed, nodeItem
+	else
+		data.pool(nodeItem)
 
 	return this
 
-NodeList::removeEntity = ->
+# For entity that is not part of the node type, it will be
+# checked against component type constrains and added if valid.
+# Otherwise entity is removed from node type forcefully.
+NodeType::updateEntity = ->
+	data = this[ bData ]
 	entity = validateEntity arguments[0]
-	map = entity[ symbols.bNodes ]
-	if nodeItem = map.get this
-		Lill.remove this, nodeItem
-		map.delete this
-		# If anything watches for removed nodes
-		# the actual pooling is postpoed
-		if removed = this[ bData ].removed
-			Lill.add removed, nodeItem
-		else
-			poolNodeItem.call this, nodeItem
+
+	unless entity[ data.ref ]
+		return this.addEntity entity
+	else
+		return this.removeEntity entity
 
 	return this
 
-NodeList::each = (fn, ctx) -> Lill.each this, fn, ctx
+# Wrapper method for looping over node items.
+NodeType::each = (fn) ->
+	if arguments.length <= 1
+		Lill.each this, fn
+		return this
 
-NodeList::onAdded = (callback) ->
+	args = Array.prototype.slice.call arguments, 1
+	Lill.each this, (node) ->
+		fn(node, args...)
+
+	return this
+
+# Allow to register callback function that will be called
+# whenever new entity is added to the node type. Callbacks
+# will be executed when finish() method is invoked.
+NodeType::onAdded = (callback) ->
 	unless _.isFunction callback
 		throw new TypeError 'expected callback function for onNodeAdded call'
 
-	{added} = this[ bData ]
+	{added} = data = this[ bData ]
 	unless added
-		this[ bData ].added = added = []
+		data.added = added = []
 		Lill.attach added
 
 	added.push callback
 	return this
 
-NodeList::onRemoved = (callback) ->
+# Similar to onAdded, but invokes callbacks for each removed
+# entity when finish() method is invoked.
+NodeType::onRemoved = (callback) ->
 	unless _.isFunction callback
 		throw new TypeError 'expected callback function for onNodeRemoved call'
 
-	{removed} = this[ bData ]
+	{removed} = data = this[ bData ]
 	unless removed
-		this[ bData ].removed = removed = []
+		data.removed = removed = []
 		Lill.attach removed
 
 	removed.push callback
 	return this
 
-NodeList::finish = ->
+# Used to invoke registered onAdded and onRemoved callbacks.
+NodeType::finish = ->
 	data = this[ bData ]
 
 	if (added = data.added) and Lill.getSize(added)
@@ -142,13 +158,14 @@ NodeList::finish = ->
 	if (removed = data.removed) and Lill.getSize(removed)
 		for removedCb in removed
 			Lill.each removed, removedCb
-		# Return removed nodes to pool
-		Lill.each removed, poolNodeItem.bind this
+		# return removed nodes to pool
+		Lill.each removed, data.pool
 		Lill.clear removed
 
 	return this
 
-Object.defineProperties NodeList.prototype,
+# Some convenient properties from Lill.
+Object.defineProperties NodeType.prototype,
 	'head':
 		enumerable: yes
 		get: -> Lill.getHead this
@@ -161,27 +178,106 @@ Object.defineProperties NodeList.prototype,
 		enumerable: yes
 		get: -> Lill.getSize this
 
-poolNodeItem = (nodeItem) ->
-	nodeItem[ symbols.bEntity ] = null
-	this[ bPool ].push nodeItem
+## NODEITEM
 
-hashComponent = (result, componentType) ->
-	result *= componentType[ symbols.bIdentity ]
+# Creates node item constructor function having properties
+# for component types attached to prototype.
+createNodeItem = (nodeType, componentTypes) ->
+
+	NodeItem = ->
+	NodeItem.prototype = new BaseNodeItem nodeType
+
+	for componentType in componentTypes
+		defineComponentProperty NodeItem, componentType
+
+	return NodeItem
+
+# Define property with name of component type and getter that
+# returns current component instance from entity.
+defineComponentProperty = (nodeItemConstructor, componentType) ->
+	Object.defineProperty(
+		nodeItemConstructor.prototype
+		componentType.typeName
+		{
+			enumerable: yes
+			get: -> this[ symbols.bEntity ].get(componentType, true)
+		}
+	)
+
+## BASENODEITEM
+
+BaseNodeItem = (nodeType) ->
+	this[ symbols.bType ] = nodeType
+	return this
+
+BaseNodeItem::[ symbols.bType ] = null
+BaseNodeItem::[ symbols.bEntity ] = null
+
+Object.defineProperty BaseNodeItem.prototype, 'entityRef', {
+	enumerable: yes
+	get: -> this[ symbols.bEntity ]
+}
+
+## INSPECTION
+
+BaseNodeItem::inspect = ->
+	result = {
+		"--nodeType": this[ symbols.bType ].inspect(yes)
+		"--entity": this[ symbols.bEntity ].inspect()
+	}
+
+	for componentType in this[ symbols.bType ][ bData ].list
+		result[componentType.typeName] = this[componentType.typeName]?.inspect()
+
+	return result
+
+NodeType::inspect = (metaOnly) ->
+	data = this[ bData ]
+	result = {
+		"--nodeSpec": data.list.map(mapComponentName).join(',')
+		"--listSize": this.size
+	}
+	return result if metaOnly is yes
+
+	toResult = (label, source) ->
+		return unless source and Lill.getSize(source)
+		target = result[label] = []
+		Lill.each source, (item) ->
+			target.push item.inspect()
+
+	toResult 'all', this
+	toResult 'added', data.added
+	toResult 'removed', data.removed
+
+	return result
+
+## UTILITY FUNCTIONS
+
+mapComponentName = (componentType) ->
+	return componentType.typeName
+
+poolNodeItem = (pool, nodeItem) ->
+	unless nodeItem and pool.length
+		return pool.pop()
+	nodeItem[ symbols.bEntity ] = null
+	pool.push nodeItem
 
 validateEntity = (entity) ->
 	unless entity and _.isFunction(entity.get)
-		throw new TypeError 'invalid entity for node'
+		throw new TypeError 'invalid entity for node type'
 	return entity
 
 validateComponentType = (componentType) ->
 	return false unless componentType
-	unless _.isFunction(componentType) and componentType[ symbols.bIdentity ]
-		throw new TypeError 'invalid component for node'
-	return true
+	return componentType instanceof Component
 
-validateStorageMap = (storageMap) ->
-	return false unless storageMap
-	return true if storageMap instanceof Map
-	return _.isFunction(storageMap.get) and _.isFunction(storageMap.set)
+NodeType.validateComponentTypes = (types) ->
+	unless _.isArray types
+		_types = _([types])
+	else
+		_types = _(types)
 
-module.exports = Node
+	# filter out duplicates and invalid component types
+	return _types.uniq().filter(validateComponentType).value()
+
+module.exports = Object.freeze NodeType

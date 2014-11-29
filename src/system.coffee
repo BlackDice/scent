@@ -2,7 +2,7 @@ _ = require 'lodash'
 
 symbols = require './symbols'
 
-module.exports = (name, initializer) ->
+exports.define = (name, initializer) ->
 
 	unless _.isString name
 		throw new TypeError 'expected name for system'

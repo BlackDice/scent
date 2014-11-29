@@ -1,10 +1,16 @@
-{expect, createMockComponent, mockEntity, sinon} = require './setup'
+{expect, sinon} = require './setup'
 Node = require '../src/node'
+Component = require '../src/component'
+Entity = require '../src/entity'
 symbols = require '../src/symbols'
 
 {Map} = require 'es6'
 
 describe 'Node', ->
+
+	beforeEach ->
+		(require './setup').resetComponentIdentities()
+		@cComponent = Component 'test'
 
 	it 'should be a function', ->
 		expect(Node).to.be.a "function"
@@ -12,59 +18,35 @@ describe 'Node', ->
 	it 'expects array or single component at first argument', ->
 
 		toThrow = (msg, fn) ->
-			expect(fn).to.throw TypeError, /invalid component/, msg
-		toThrow 'number', -> Node 1,
+			expect(fn).to.throw TypeError, /at least one component type/, msg
+		toThrow 'number', -> Node 1
 		toThrow 'bool', -> Node true
 		toThrow 'string', -> Node 'nothing'
 		toThrow 'object', -> Node {}
-
-		toThrowMissing = (msg, fn) ->
-			expect(fn).to.throw TypeError, /component for node/, msg
-		toThrowMissing 'empty array', -> Node []
-		toThrowMissing 'num array', -> Node [1]
-		toThrowMissing 'bool array', -> Node [true]
-		toThrowMissing 'object array', -> Node [{}]
-
-	it 'expects Map or object with get and set methods in second argument', ->
-		comp = createMockComponent()
-		toThrow = (msg, fn) ->
-			expect(fn).to.throw TypeError, /storage map expected/, msg
-		toThrow 'number', -> Node [comp], 1
-		toThrow 'bool', -> Node [comp], true
-		toThrow 'string', -> Node [comp], 'nothing'
-		toThrow 'object', -> Node [comp], {}
-		toThrow 'object', -> Node [comp], {get: 'get'}
-		toThrow 'object', -> Node [comp], {set: 'set'}
+		toThrow 'empty array', -> Node []
+		toThrow 'num array', -> Node [1]
+		toThrow 'bool array', -> Node [true]
+		toThrow 'object array', -> Node [{}]
 
 	it 'returns new node type object for each call', ->
-		actual = Node [cComponent = createMockComponent()]
+		actual = Node @cComponent
 		expect(actual).to.be.an "object"
-		expected = Node [cComponent]
+		expected = Node [@cComponent]
 		expect(expected).to.not.equal actual
-
-	it 'creates node type for each different component set passed in', ->
-		map = new Map
-		Node [cComponent = createMockComponent()], map
-		expect(map.size).to.equal 1
-		Node [cComponent], map
-		expect(map.size).to.equal 1
-		Node [createMockComponent()], map
-		expect(map.size).to.equal 2
-
-	it 'forbids modification to node type structure', ->
-		nNode = Node [createMockComponent()]
-		nNode[expected = 'donotaddthis'] = true
-		expect(nNode).not.to.have.ownProperty expected
 
 	describe 'type', ->
 
 		beforeEach ->
-			@cAlphaComponent = createMockComponent('alpha')
-			@cBetaComponent = createMockComponent('beta')
+			@cAlphaComponent = Component('alpha')
+			@cBetaComponent = Component('beta')
 			@nNode = Node [@cAlphaComponent, @cBetaComponent]
-			@createEntity = =>
-				mockEntity (@alpha = do @cAlphaComponent), (@beta = do @cBetaComponent)
-			@entity = @createEntity()
+			@createEntity = (comps) =>
+				comps ?= [new @cAlphaComponent, new @cBetaComponent]
+				return new Entity comps
+			@entity = @createEntity [
+				@alpha = new @cAlphaComponent
+				@beta = new @cBetaComponent
+			]
 
 		afterEach ->
 			@nNode.each (node) => @nNode.removeEntity node[ symbols.bEntity ]
@@ -84,10 +66,7 @@ describe 'Node', ->
 
 		describe 'addEntity()', ->
 
-			beforeEach ->
-				@badEntity = mockEntity (do createMockComponent('fail'))
-
-			it 'expects one argument with entity or array of entities', ->
+			it 'expects one argument with entity', ->
 				expectEntity @nNode, 'addEntity'
 
 			it 'adds compatible entities to the list', ->
@@ -98,7 +77,8 @@ describe 'Node', ->
 				expect(@nNode.size).to.equal 2
 
 			it 'keeps incompatible entities out of the list', ->
-				@nNode.addEntity @badEntity
+				badEntity = new Entity [new (Component 'bad')]
+				@nNode.addEntity badEntity
 				expect(@nNode.size).to.equal 0
 
 			it 'silently ignores entities that are already on the list', ->
@@ -106,10 +86,10 @@ describe 'Node', ->
 				@nNode.addEntity @entity
 				expect(@nNode.size).to.equal 1
 
-			it 'returns node list itself', ->
+			it 'returns node type itself', ->
 				expect(@nNode.addEntity @entity).to.equal @nNode
 				expect(@nNode.addEntity @entity).to.equal @nNode
-				expect(@nNode.addEntity @badEntity).to.equal @nNode
+				expect(@nNode.addEntity new Entity).to.equal @nNode
 
 			describe 'added item', ->
 
@@ -120,16 +100,12 @@ describe 'Node', ->
 				it 'has @@entity property equal to added entity', ->
 					expect(@item[ symbols.bEntity ]).to.equal @entity
 
-				it 'has @@type property equal to parent node list', ->
+				it 'has @@type property equal to parent node type', ->
 					expect(@item[ symbols.bType ]).to.equal @nNode
 
 				it 'has properties based on components names in the set ', ->
-					expect(@item).to.have.property @cAlphaComponent[ symbols.bName ], @alpha
-					expect(@item).to.have.property @cBetaComponent[ symbols.bName ], @beta
-
-				it 'should be stored in @@nodes map within entity object', ->
-					expect(@entity[ symbols.bNodes ].has(@nNode)).to.be.true
-					expect(@entity[ symbols.bNodes ].get(@nNode)).to.equal @nNode.head
+					expect(@item).to.have.property @cAlphaComponent.typeName, @alpha
+					expect(@item).to.have.property @cBetaComponent.typeName, @beta
 
 		it 'responds to `removeEntity` method', ->
 			expect(@nNode).to.respondTo 'removeEntity'
@@ -139,41 +115,28 @@ describe 'Node', ->
 			beforeEach ->
 				@nNode.addEntity @entity
 
-			it 'expects one argument with entity or array of entities', ->
+			it 'expects one argument with entity', ->
 				expectEntity @nNode, 'removeEntity'
 
-			it 'removes item from the list when it has been added before', ->
-				otherEntity = @createEntity()
-				missingEntity = @createEntity()
-				@nNode.addEntity otherEntity
+			it 'removes item that no longer fits components constrains', ->
 				@nNode.removeEntity @entity
 				expect(@nNode.size).to.equal 1
-				expect(@nNode.head[ symbols.bEntity ]).to.equal otherEntity
-				@nNode.removeEntity missingEntity
-				expect(@nNode.size).to.equal 1
-				@nNode.removeEntity otherEntity
+				expect(@nNode.head.entityRef).to.equal @entity
+				@entity.remove @cBetaComponent
+				@nNode.removeEntity @entity
 				expect(@nNode.size).to.equal 0
 
-			it 'returns node list itself', ->
+			it 'returns node type itself', ->
 				missingEntity = @createEntity()
 				expect(@nNode.removeEntity @entity).to.equal @nNode
 				expect(@nNode.removeEntity missingEntity).to.equal @nNode
-
-			it 'should remove itself from the entity\'s @@nodes map', ->
-				@nNode.removeEntity @entity
-				expect(@entity[ symbols.bNodes ].has(@nNode)).to.be.false
-
-			it 'removes entity reference from @@entity property', ->
-				item = @nNode.head
-				@nNode.removeEntity @entity
-				expect(item[ symbols.bEntity ]).to.equal null
 
 		it 'responds to `updateEntity` method', ->
 			expect(@nNode).to.respondTo 'updateEntity'
 
 		describe 'updateEntity()', ->
 
-			it 'expects one argument with entity or array of entities', ->
+			it 'expects one argument with entity', ->
 				expectEntity @nNode, 'updateEntity'
 
 			it 'adds entity if not on the list and it\'s compatible', ->
@@ -182,10 +145,10 @@ describe 'Node', ->
 
 			it 'updates component references to current ones', ->
 				@nNode.addEntity @entity
-				@entity.add (newAlpha = do @cAlphaComponent)
+				@entity.replace newAlpha = (new @cAlphaComponent)
 				@nNode.updateEntity @entity
 				expect(@nNode.size).to.equal 1
-				expect(@nNode.head).to.have.property @cAlphaComponent[ symbols.bName ], newAlpha
+				expect(@nNode.head).to.have.property @cAlphaComponent.typeName, newAlpha
 
 			it 'removes entity if it\'s no longer compatible', ->
 				@nNode.addEntity @entity
@@ -233,11 +196,14 @@ describe 'Node', ->
 				expect(spy.secondCall.args[0][ symbols.bEntity ]).to.equal otherEntity
 				expect(spy.secondCall.args[1]).to.equal 1
 
-			it 'optionally accepts third argument being context for the callback function', ->
+			it 'passes any additional arguments to callback with node item being first', ->
 				@nNode.addEntity @entity
 				spy = sinon.spy()
-				@nNode.each spy, ctx = {}
-				expect(spy).to.be.calledOn ctx
+				@nNode.each spy, x = 1, y = 2
+				expect(spy).to.be.calledWith(
+					sinon.match.object
+					x, y
+				)
 
 		it 'responds to `finish` method', ->
 			expect(@nNode).to.respondTo 'finish'
@@ -291,6 +257,7 @@ describe 'Node', ->
 				@nNode.onRemoved spy = sinon.spy()
 				@nNode.addEntity @entity
 				expect(spy).to.not.have.been.called
+				@entity.remove @cAlphaComponent
 				@nNode.removeEntity @entity
 				expect(spy).to.not.have.been.called
 				@nNode.finish()
@@ -299,3 +266,11 @@ describe 'Node', ->
 				@nNode.finish()
 				expect(spy).to.not.have.been.called
 
+			it 'keeps access to data of removed components', (done) ->
+				@nNode.addEntity @entity
+				@nNode.onRemoved (nodeItem) =>
+					expect(nodeItem).to.have.property @cAlphaComponent.typeName, @alpha
+					done()
+				@entity.remove @cAlphaComponent
+				@nNode.removeEntity @entity
+				@nNode.finish()

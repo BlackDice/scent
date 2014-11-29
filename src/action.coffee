@@ -27,8 +27,6 @@ ActionType = (name) ->
 	return actionType
 
 Action = (@type, @data, @meta) ->
-	@origin = origin if arguments.length > 1
-	return this
 
 Action.prototype = Object.create Array.prototype
 Action::time = 0
@@ -57,7 +55,7 @@ ActionType::trigger = (data, meta) ->
 
 	return action
 
-ActionType::each = (iterator) ->
+ActionType::each = (iterator, ctx) ->
 	unless iterator and _.isFunction iterator
 		throw new TypeError 'expected iterator function for the each call'
 
@@ -68,10 +66,21 @@ ActionType::each = (iterator) ->
 
 	return unless data.list?.length
 
+	fn = if ctx
+		each$withContext
+	else
+		each$noContext
+
 	for action in data.list
-		iterator.call iterator, action
+		fn iterator, action, ctx
 
 	return
+
+each$noContext = (fn, action) ->
+    fn action
+
+each$withContext = (fn, action, ctx) ->
+    fn.call ctx, action
 
 ActionType::finish = ->
 	data = this[ bData ]
