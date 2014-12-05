@@ -1,10 +1,9 @@
 {
   "name": "scent",
-  "private": true,
   "version": "0.7.0",
   "repository": {
     "type": "git",
-    "url": "git@git.mrammor.com:library/scent.git"
+    "url": "https://github.com/BlackDice/scent.git"
   },
   "main": "lib/scent.js",
   "browser": "lib/scent-browser.js",

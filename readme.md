@@ -2,6 +2,10 @@
 
 *Make a great game with fresh scent. It smells really good !*
 
+[![Build Status](https://travis-ci.org/BlackDice/scent.svg)](https://travis-ci.org/BlackDice/scent)[![Dependencies status](https://david-dm.org/BlackDice/scent/status.svg)](https://david-dm.org/BlackDice/scent#info=dependencies)[![devDependency Status](https://david-dm.org/BlackDice/scent/dev-status.svg)](https://david-dm.org/BlackDice/scent#info=devDependencies)
+
+[![NPM](https://nodei.co/npm/scent.png)](https://nodei.co/npm/scent/)
+
 Scent is framework heavily based on the [Ash framework](http://www.ashframework.org/) and rewritten for the purpose of multi-player games. Basic idea is very similar however coding style is quite different. Thanks to the environments like NodeJS, you can use Scent on the game server too and share most of code with game client.
 
 Main idea of this approach is [composition over inheritance](http://en.wikipedia.org/wiki/Composition_over_inheritance). You are no longer creating objects with all of its properties and method in one big messy blob. Instead you are composing entities from small pieces called components. That way you can create various combinations without duplicating any code.
@@ -111,3 +115,14 @@ There is minimum of runtime errors (except unexpected ones). Instead the [debug]
 To have a look at tests outcome, you have to install node dependencies first (using `npm install`) and then you can simply run `npm test` to see the test outcome.
 
 For development we are using amazing Test'em tool. Just install it globally (`npm install -g testem`) and then run in this directory (`testem`). Tests will run in Node environment by default and you can connect with any browser to see how the framework behaves in there.
+
+## License
+
+The MIT License (MIT)
+Copyright © 2014 Black Dice Ltd.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
