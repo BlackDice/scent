@@ -12,22 +12,24 @@
     "test": "mocha test/run.coffee"
   },
   "devDependencies": {
-    "browserify": "~5.12.1",
+    "browserify": "^7.0.0",
     "chai": "^1.9.1",
     "chai-as-promised": "^4.1.1",
     "coffee-script": "^1.8.0",
-    "coffeeify": "^0.7.0",
+    "coffeeify": "^1.0.0",
+    "mocha": "^2.0.1",
     "sinon": "^1.10.3",
-    "sinon-chai": "^2.5.0"
+    "sinon-chai": "^2.5.0",
+    "uglify-js": "^2.4.15"
   },
   "dependencies": {
-    "debug": "^1.0.4",
+    "debug": "^2.1.0",
     "lodash": "^2.4.1",
-    "fast.js": "0.0.3",
+    "fast.js": "^0.1.1",
     "lill": "^0.3.2",
     "nome": "^0.1.1",
     "fn-args": "^1.0.0",
     "async": "^0.9.0",
-    "es6": "http://github.com/BlackDice/es6/tarball/0.0.1"
+    "es6": "BlackDice/es6"
   }
 }

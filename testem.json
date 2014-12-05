@@ -7,10 +7,10 @@
     "serve_files": [
         "test/bundle.js"
     ],
-    "before_tests": "browserify -o test/bundle.js -t coffeeify --extension=.coffee test/run.coffee",
+    "before_tests": ".\\node_modules\\.bin\\browserify -o test/bundle.js -t coffeeify --extension=.coffee test/run.coffee",
     "launchers": {
         "Node": {
-            "command": "mocha -R tap test/run.coffee",
+            "command": ".\\node_modules\\.bin\\mocha -R tap test/run.coffee",
             "protocol": "tap"
         }
     },
