@@ -47,6 +47,8 @@ You can easily trigger new action with `triggerAction` method.
 
 ```js
 	engine.triggerAction('boom', {radius: 500, power: 100});
+	var bPrivateAction = new Symbol('private action');
+	engine.triggerAction(bPrivateAction);
 ```
 
 Be aware that even if you create such action in the middle of update cycle, it will not be processed sooner then in the beginning of the next update cycle.
@@ -93,14 +95,16 @@ You can also use `onAdded` and `onRemoved` method to register your handlers. The
 Engine keeps the list of all entities for you. It also automatically informs existing node types about these. All you need to do is call method `addEntity`.
 
 ```js
-	var building = new cBuilding;
-	building.floors = 10
-	var foundation = new cFoundation;
-	foundation.material = 'stone'
-	var eCorporateBuilding = engine.addEntity([building, foundation]);
+	var building, foundation;
+	var eCorporateBuilding = engine.addEntity([
+		building = new cBuilding,
+		foundation = new cFoundation
+	]);
+	building.floors = 10;
+	foundation.material = 'stone';
 ```
 
-There is no direct method for removal of entity from engine. Instead when you call `engine.dispose()`, it will eventually remove entity from engine as well.
+There is no direct method for removal of entity from engine. Instead when you call `entity.dispose()`, it will eventually remove entity from engine as well.
 
 ## Add the systems
 
@@ -164,7 +168,7 @@ Please note that once the engine is started, adding asynchronous system doesn't 
 Now it's time to go deeper as so far the engine is nice and powerful, but also too closed for your taste. You can create extension to engine simply like this.
 
 ```js
-	var engine = new Scent.Engine(engine) {
+	var engine = new Scent.Engine(function(engine) {
 		// Here goes any extensions and setup
 	});
 ```
