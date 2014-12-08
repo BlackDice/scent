@@ -40,6 +40,7 @@ Engine = (initializer) ->
 	## SYSTEMS
 
 	systemList = []
+	systemAnonCounter = 1
 	engine.addSystem = (systemInitializer) ->
 		unless systemInitializer and _.isFunction systemInitializer
 			throw new TypeError 'expected function for addSystem call'
@@ -47,8 +48,12 @@ Engine = (initializer) ->
 		if ~fast.indexOf systemList, systemInitializer
 			throw new Error 'system is already added to engine'
 
-		unless name = systemInitializer[ symbols.bName ]
-			throw new TypeError 'function for addSystem is not system initializer'
+		name = systemInitializer[ symbols.bName ]
+		unless name
+			name = systemInitializer.name or
+			systemInitializer.displayName or
+			'system' + (systemAnonCounter++)
+			systemInitializer[ symbols.bName ] = name
 
 		fast.forEach systemList, (storedSystem) ->
 			if storedSystem[ symbols.bName ] is name

@@ -114,13 +114,18 @@ System initializers are not invoked immediately when added to the engine. You ha
 	var sInput = Scent.System.define('input', function() {
 
 	});
+	function sDisplay($engine) {
+
+	};
 	engine.addSystem(sInput);
 ```
+
+As you may see, there is no need to use System.define call. Instead you can create named function and it will be used as a system. Even if you create anonymous function, it will be given generated name, so no worry.
 
 Above method supports only single system passed in. You have to call it for each system separately. For the sake of simplicity, there is also `addSystems` method which accepts array of system initializers.
 
 ```js
-	engine.addSystems([sInput, sDisply, sMovement]);
+	engine.addSystems([sInput, sDisplay, sMovement]);
 ```
 
 ## Start the engine
@@ -138,7 +143,7 @@ Argument `done` is here to support asynchronous initialization of systems. When 
 You may have heard about term *dependency injection*. It's rather simple but powerful idea. Scent engine provides this to power up systems more easily. As you may have noticed earlier, system initializer function isn't initially expecting any arguments. Since each system is different and has different needs, it would be cumbersome to have fixed arguments in there.
 
 ```js
-	System('powerful', function($engine) {
+	Scent.System.define('powerful', function($engine) {
 		$engine.onUpdate(function() {
 
 		});

@@ -140,22 +140,39 @@ describe 'Engine', ->
             toThrow 'array', -> engine.addSystem []
             toThrow 'object', -> engine.addSystem {}
 
-        it 'expects function to have @@name', ->
-            expect(=> @engine.addSystem(->)).to.throw TypeError, /not system initializer/
-
-        it 'expects @@name of system to be unique', ->
-            @engine.addSystem mockSystem()
-            expect(=> @engine.addSystem mockSystem()).to.throw TypeError, /has to be unique/
-
-        it 'returns engine instance itself', ->
-            expect(@engine.addSystem mockSystem()).to.equal @engine
-
         it 'forbids to add same system initializer multiple times', ->
             system = mockSystem('again')
             @engine.addSystem system
             expect(=> @engine.addSystem system).to.throw Error, /already added/
 
-        it 'invokes function only if engine is already started', ->
+        it 'sets @@name property to system1 if anonymous function is passed', ->
+            anon = new Function
+            @engine.addSystem anon
+            expect(anon[ symbols.bName ]).to.equal 'system1'
+
+        it 'sets @@name property based on name property of the function', ->
+            `function namedFunction() {}`
+            @engine.addSystem namedFunction
+            expect(namedFunction[ symbols.bName ]).to.equal 'namedFunction'
+
+        it 'sets @@name property to system2 for next anonymous function', ->
+            anon1 = new Function
+            anon2 = new Function
+            `function namedFunction() {}`
+            @engine.addSystems [anon1, namedFunction, anon2]
+            expect(anon2[ symbols.bName ]).to.equal 'system2'
+
+        it 'expects unique name of the system', ->
+            `function namedFunction() {}`
+            expect(=> @engine.addSystems([
+                namedFunction
+                mockSystem('namedFunction')
+            ])).to.throw TypeError, /has to be unique/
+
+        it 'returns engine instance itself', ->
+            expect(@engine.addSystem mockSystem()).to.equal @engine
+
+        it 'invokes function when engine is already started', ->
             @engine.start()
             systemAfter = mockSystem('after')
             @engine.addSystem systemAfter
