@@ -48,8 +48,14 @@ function compile(file, cb) {
       fs.readFile(src + '/' + file, next);
     },
     function(source, next) {
-      var compiled = coffee.compile(source.toString(), {bare: true});
-      writeOut(file.replace('.coffee', '.js'), compiled, next);
+      try {
+        var compiled = coffee.compile(source.toString(), {bare: true});
+        writeOut(file.replace('.coffee', '.js'), compiled, next);
+      }
+      catch (e) {
+        console.error('Failed compiling '+file);
+        console.log(e);
+      }
     }
   ], cb);
 }
