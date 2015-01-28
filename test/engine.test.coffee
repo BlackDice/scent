@@ -421,6 +421,7 @@ describe 'Engine', ->
             @engine.onAction 'test', expected()
             @engine.triggerAction 'test', data
             @engine.triggerAction 'test', null, meta
+            @engine.getActionType 'not processed'
             @engine.update()
             expect(spy.callCount).to.equal 4
 

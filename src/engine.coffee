@@ -226,6 +226,7 @@ Engine = (initializer) ->
 
 	processActionType = (actionType) ->
 		callbacks = actionHandlerMap.get actionType
+		return unless callbacks and callbacks.length
 		for callback in callbacks
 			actionType.each callback
 		actionType.finish()
