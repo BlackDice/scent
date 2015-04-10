@@ -59,7 +59,7 @@ To make the system (or any other piece of code) to process action, simply call `
 
 ```js
 	engine.onAction('boom', function(action) {
-		boom.data.radius
+		action.data.radius
 	});
 ```
 
