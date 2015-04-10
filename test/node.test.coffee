@@ -274,6 +274,16 @@ describe 'Node', ->
 				@nNode.finish()
 				expect(spy).to.not.have.been.called
 
+			it 'invokes all callbacks for every removed node item when finish() is called', ->
+				@nNode.onRemoved spy = sinon.spy()
+				@nNode.onRemoved spy2 = sinon.spy()
+				@nNode.addEntity @entity
+				@entity.remove @cAlphaComponent
+				@nNode.removeEntity @entity
+				@nNode.finish()
+				expect(spy).to.have.been.calledOnce
+				expect(spy2).to.have.been.calledOnce
+
 			it 'keeps access to data of removed components', (done) ->
 				@nNode.addEntity @entity
 				@nNode.onRemoved (nodeItem) =>
