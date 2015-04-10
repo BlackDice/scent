@@ -84,7 +84,8 @@ Following is small example how simply you can create game mechanics to close doo
 	door.material = 'wood';
 	var eDoor = engine.addEntity([door]);
 
-	engine.onAction('doorOpen', function(eDoor) {
+	engine.onAction('doorOpen', function(action) {
+		var eDoor = action.data;
 		eDoor.get(cDoor).open = Date.now();
 	});
 
