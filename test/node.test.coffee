@@ -236,6 +236,14 @@ describe 'Node', ->
 				@nNode.finish()
 				expect(spy).to.not.have.been.called
 
+			it 'invokes all callbacks for every created node item when finish() is called', ->
+				@nNode.onAdded spy = sinon.spy()
+				@nNode.onAdded spy2 = sinon.spy()
+				@nNode.addEntity @entity
+				@nNode.finish()
+				expect(spy).to.have.been.calledOnce
+				expect(spy2).to.have.been.calledOnce
+
 		it 'responds to `onRemoved` method', ->
 			expect(@nNode).to.respondTo 'onRemoved'
 

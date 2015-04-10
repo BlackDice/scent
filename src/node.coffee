@@ -153,7 +153,7 @@ NodeType::finish = ->
 	if (added = data.added) and Lill.getSize(added)
 		for addedCb in added
 			Lill.each added, addedCb
-			Lill.clear added
+		Lill.clear added
 
 	if (removed = data.removed) and Lill.getSize(removed)
 		for removedCb in removed
