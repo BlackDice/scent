@@ -15,12 +15,17 @@ Node = require './node'
 Entity = require './entity'
 Action = require './action'
 
+bInitialized = symbols.Symbol("engine is initialized")
+
 Engine = (initializer) ->
+
+	unless this instanceof Engine
+		return new Engine(initializer)
 
 	if initializer? and not _.isFunction initializer
 		throw new TypeError 'expected function as engine initializer'
 
-	engine = Object.create null
+	engine = this
 	isStarted = no
 
 	## ENTITIES
@@ -292,7 +297,7 @@ Engine = (initializer) ->
 	injections = new Map
 
 	provide = (name, injection) ->
-		if Object.isFrozen engine
+		if engine[bInitialized]
 			throw new Error 'cannot call provide for initialized engine'
 
 		unless name?.constructor is String and name.length
@@ -310,11 +315,11 @@ Engine = (initializer) ->
 	provide '$engine', engine
 
 	if initializer
-		initializer.call null, engine, provide
+		initializer engine, provide
 		initializer = null
 
-	Object.setPrototypeOf engine, Engine.prototype
-	return Object.freeze engine
+	engine[bInitialized] = true
+	return engine
 
 Engine.prototype = Object.create Function.prototype
 Engine.prototype.toString = -> "Engine (#{Lill.getSize this.entityList} entities)"

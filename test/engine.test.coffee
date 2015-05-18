@@ -27,17 +27,15 @@ describe 'Engine', ->
         toThrow 'array', -> Engine []
         toThrow 'object', -> Engine {}
 
-    it 'returns engine instance as frozen object', ->
+    it 'returns engine instance', ->
         actual = Engine()
         expect(actual).to.be.an "object"
-        expect(Object.isFrozen actual).to.be.true
-        do actual[ symbols.bDispose ]
+        expect(actual).to.be.an.instanceof Engine
 
     it 'invokes function passed in first argument with extensible engine instance', ->
         engine = Engine (spy = sinon.spy())
         expect(spy).to.have.been
             .calledOnce
-            .calledOn(null)
             .calledWith(engine)
         Engine (engine2) ->
             expect(Object.isExtensible engine2).to.be.true
