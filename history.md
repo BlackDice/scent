@@ -1,3 +1,8 @@
+0.8.0 [2015-21-05]
+ 
+ * added NodeType:find() method
+ * updated dependencies
+
 0.7.4 [2015-18-05]
  
  * using standard method of prototyping for the Engine
