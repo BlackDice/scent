@@ -205,6 +205,45 @@ describe 'Node', ->
 					x, y
 				)
 
+		it 'responds to `find` method', ->
+			expect(@nNode).to.respondTo 'find'
+
+		describe 'find()', ->
+
+			it 'expects predicate function in first argument', ->
+				nNode = @nNode
+				toThrow = (msg, fn) ->
+					expect(fn).to.throw TypeError, /predicate function/, msg
+				toThrow 'void', -> nNode.find()
+				toThrow 'null', -> nNode.find null
+				toThrow 'number', -> nNode.find 1
+				toThrow 'bool', -> nNode.find true
+				toThrow 'string', -> nNode.find 'nothing'
+				toThrow 'string', -> nNode.find {}
+				toThrow 'string', -> nNode.find []
+
+			it 'calls predicate for every item in the list till match is found', ->
+				@nNode.addEntity @entity
+				@nNode.addEntity otherEntity = @createEntity()
+				@nNode.addEntity extraEntity = @createEntity()
+				stub = sinon.stub()
+				stub.onSecondCall().returns(true)
+				@nNode.find stub
+				expect(stub).to.have.been.calledTwice
+				expect(stub.firstCall.args[0][ symbols.bEntity ]).to.equal @entity
+				expect(stub.firstCall.args[1]).to.equal 0
+				expect(stub.secondCall.args[0][ symbols.bEntity ]).to.equal otherEntity
+				expect(stub.secondCall.args[1]).to.equal 1
+
+			it 'passes any additional arguments to predicate with node item being first', ->
+				@nNode.addEntity @entity
+				spy = sinon.spy()
+				@nNode.find spy, x = 1, y = 2
+				expect(spy).to.be.calledWith(
+					sinon.match.object
+					x, y
+				)
+
 		it 'responds to `finish` method', ->
 			expect(@nNode).to.respondTo 'finish'
 

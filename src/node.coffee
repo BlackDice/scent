@@ -112,10 +112,19 @@ NodeType::each = (fn) ->
 		return this
 
 	args = Array.prototype.slice.call arguments, 1
-	Lill.each this, (node) ->
+	Lill.each this, Node$each = (node) ->
 		fn(node, args...)
 
 	return this
+
+# Wrapper method for finding node item.
+NodeType::find = (predicate) ->
+	if arguments.length <= 1
+		return Lill.find this, predicate
+
+	args = Array.prototype.slice.call arguments, 1
+	return Lill.find this, Node$find = (node) ->
+		predicate(node, args...)
 
 # Allow to register callback function that will be called
 # whenever new entity is added to the node type. Callbacks

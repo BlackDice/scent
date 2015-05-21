@@ -67,6 +67,20 @@ Usually you will be having piece of logic that works with set of components. You
 
 The `each` method accepts optional additional arguments that are passed in the callback after node argument.
 
+### Finding particular node item ###
+
+In some cases you might be interested in a single node item based on some conditions. Use `find` method to achieve this as it will stop looping once the required node item is found.
+
+```js
+	var findPredicate = function(node, id) {
+		return (node.identity.id == id);
+	};
+
+	var foundNode = nStructure.find(findPredicate, seekedId);
+```
+
+Once the predicate function returns true, loop is stopped and found node item returned. If no item is found, a `null` is returned.
+
 ### Access to components
 
 Node item is directly linked to entity. You can access components as usual with `node.entityRef.get()` method. Luckily for the convenience the node item also contains properties with required component names that are **lazily** evaluated to component instance contained within entity.
