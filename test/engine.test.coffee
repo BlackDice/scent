@@ -72,6 +72,19 @@ describe 'Engine', ->
             expect(nTest1).to.equal nTest2
             expect(nTest1).to.not.equal nTest3
 
+        it 'should fill node type with existing entities', ->
+            firstEntity = @engine.addEntity [
+                new @cAlphaComponent
+                new @cGamaComponent
+            ]
+            secondEntity = @engine.addEntity [
+                new @cAlphaComponent
+                new @cBetaComponent
+            ]
+            nTest = @engine.getNodeType [@cAlphaComponent]
+            expect(nTest.size).to.equal 2
+            expect(nTest.head[ symbols.bEntity ]).to.equal firstEntity
+
     describe 'instance.addEntity()', ->
 
         beforeEach ->

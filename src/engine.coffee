@@ -126,6 +126,10 @@ Engine = (initializer) ->
 		nodeType = new Node componentTypes
 		nodeMap[hash] = nodeType
 		Lill.add nodeTypes, nodeType
+
+		Lill.each engine.entityList, (entity) ->
+			nodeType.addEntity entity
+
 		return nodeType
 
 	hashComponent = (result, componentType) ->
