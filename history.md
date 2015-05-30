@@ -1,3 +1,7 @@
+0.8.1 [2015-30-05]
+
+ * fixed Engine.getNodeType to add matching entities that already exists
+
 0.8.0 [2015-21-05]
  
  * added NodeType:find() method
