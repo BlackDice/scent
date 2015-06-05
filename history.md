@@ -1,3 +1,8 @@
+0.8.2 [2015-05-06]
+
+ * added `size` property to action type
+ * updated action processing to allow nested triggering
+
 0.8.1 [2015-30-05]
 
  * fixed Engine.getNodeType to add matching entities that already exists
