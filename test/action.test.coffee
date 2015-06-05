@@ -108,6 +108,14 @@ describe 'Action', ->
 			action.set('test', expected = 200)
 			expect(action.get('test')).to.equal expected
 
+		it 'provides `size` property with number of currently triggered actions', ->
+			aType = Action @validName
+			aType.trigger()
+			aType.trigger()
+			expect(aType.size).to.equal 2
+			aType.finish()
+			expect(aType.size).to.equal 0
+
 		it 'clears the list when `finish` is invoked', ->
 			aType = Action @validName
 			aType.trigger Entity()

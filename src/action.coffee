@@ -98,6 +98,12 @@ ActionType::finish = ->
 	data.buffer = null
 	return
 
+Object.defineProperties ActionType.prototype,
+	'size':
+		enumerable: yes
+		get: ->
+			return this[ bData ].list?.length or 0
+
 ActionType::toString = ->
 	"ActionType #{this[ symbols.bName ]}"
 

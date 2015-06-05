@@ -46,6 +46,12 @@ Currently there are no means to access single actions from the list nor remove t
 
 Optionally you can pass in the context object in second argument for the callback invocation.
 
+The `each` method doesn't loop if there no actions present. However for performance reasons you might want to see number of actions in there and decide if its worth processing.
+
+```js
+	aMove.size
+```
+
 ## Getting action data
 
 As mentioned before, all data are simply made accessible through properties on action instance when iterating.
