@@ -337,6 +337,31 @@ describe 'Engine', ->
             @nBetaNode.onRemoved -> done()
             @engine.update()
 
+        it 'processes actions that was triggered during another action', ->
+            spyFirst = sinon.spy()
+            spySecond = sinon.spy()
+            spyThird = sinon.spy()
+            @engine.onAction 'third', =>
+                # This action should be postponed to next update
+                # otherwise it would cause endless loop
+                @engine.triggerAction 'first'
+                spyThird()
+            @engine.onAction 'first', =>
+                @engine.triggerAction 'second'
+                spyFirst()
+            @engine.onAction 'second', =>
+                @engine.triggerAction 'third'
+                spySecond()
+            @engine.triggerAction 'first'
+
+            @engine.update()
+            expect(spyFirst).to.have.been.calledOnce
+            expect(spySecond).to.have.been.calledOnce
+            expect(spyThird).to.have.been.calledOnce
+
+            @engine.update()
+            expect(spyFirst).to.have.been.calledTwice
+
     describe 'instance.onUpdate', ->
 
         beforeEach ->

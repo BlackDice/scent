@@ -8,7 +8,7 @@ async = require 'async'
 NoMe = require 'nome'
 Lill = require 'lill'
 
-{Map} = require 'es6'
+{Map, Set} = require 'es6'
 
 symbols = require './symbols'
 Node = require './node'
@@ -198,6 +198,8 @@ Engine = (initializer) ->
 	actionMap = new Map
 	actionHandlerMap = new Map
 	actionTypes = Lill.attach {}
+	actionsTriggered = 0
+	actionTypesProcessed = new Set
 
 	engine.getActionType = (actionName, noCreate) ->
 		unless actionType = actionMap.get actionName
@@ -214,6 +216,7 @@ Engine = (initializer) ->
 			return engine
 
 		actionType.trigger(data, meta)
+		actionsTriggered += 1
 		return engine
 
 	engine.onAction = (actionName, callback) ->
@@ -232,13 +235,31 @@ Engine = (initializer) ->
 
 	processActions = ->
 		Lill.each actionTypes, processActionType
+		if actionsTriggered isnt 0
+			actionsTriggered = 0
+			return processActions()
+
+		# Reset list for next update loop
+		actionTypesProcessed.clear()
 
 	processActionType = (actionType) ->
+		if actionType.size is 0
+			return
+
+		if actionTypesProcessed.has(actionType)
+			log "Detected recursive action triggering. Action `%s` has been already processed during this update.", actionType[symbols.bName]
+			actionsTriggered -= actionType.size
+			return
+
 		callbacks = actionHandlerMap.get actionType
-		return unless callbacks and callbacks.length
+		unless callbacks and callbacks.length
+			return
+
 		for callback in callbacks
 			actionType.each callback
+
 		actionType.finish()
+		actionTypesProcessed.add actionType
 
 	engine[ symbols.bDispose ] = ->
 		Entity.disposed.denotify nomeEntityDisposed
