@@ -92,16 +92,32 @@ You can also use `onAdded` and `onRemoved` method to register your handlers. The
 
 ## Entity management
 
-Engine keeps the list of all entities for you. It also automatically informs existing node types about these. All you need to do is call method `addEntity`.
+Engine keeps the list of all entities for you. It also automatically informs existing node types about these. All you need to do is call method `buildEntity`.
 
 ```js
 	var building, foundation;
-	var eCorporateBuilding = engine.addEntity([
+	var eCorporateBuilding = engine.buildEntity([
 		building = new cBuilding,
 		foundation = new cFoundation
 	]);
 	building.floors = 10;
 	foundation.material = 'stone';
+```
+
+You can also add existing entities with `addEntity`.
+
+```js
+	var building = new cBuilding;
+	building.floors = 10;
+
+	var foundation = new cFoundation;
+	foundation.material = 'stone';
+
+	var eCorporateBuilding = new Scent.Entity();
+	eCorporateBuilding.add(building);
+	eCorporateBuilding.add(foundation);
+
+	engine.addEntity(eCorporateBuilding);
 ```
 
 There is no direct method for removal of entity from engine. Instead when you call `entity.dispose()`, it will eventually remove entity from engine as well.
