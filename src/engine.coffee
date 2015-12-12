@@ -99,13 +99,18 @@ Engine = (initializer) ->
 			fast.forEach systemList, initializeSystem
 			isStarted = yes
 
+		engine.update = engine$update
+
 		return this
 
-	engine.update = NoMe ->
+	engine.update = ->
+		throw new Error 'engine needs to be started before running update'
+
+	engine$update = NoMe ->
 		processActions()
 		processNodeTypes()
 
-	engine.onUpdate = fast.bind engine.update.notify, engine.update
+	engine.onUpdate = fast.bind engine$update.notify, engine$update
 
 	## NODES
 

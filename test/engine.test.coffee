@@ -316,6 +316,7 @@ describe 'Engine', ->
 
         beforeEach ->
             @engine = Engine()
+            @engine.start()
             @nAlphaNode = @engine.getNodeType [@cAlphaComponent]
             @nBetaNode = @engine.getNodeType [@cBetaComponent]
             @nGamaNode = @engine.getNodeType [@cGamaComponent]
@@ -326,6 +327,10 @@ describe 'Engine', ->
 
         it 'should be a function', ->
             expect(@engine).to.respondTo 'update'
+
+        it 'cannot be invoked till engine is started', ->
+            engine = new Engine
+            expect(engine.update.bind(engine)).to.throw Error, /needs to be started/
 
         it 'adds created entity to compatible nodes', ->
             expect(@nAlphaNode.size).to.equal 0
@@ -394,6 +399,7 @@ describe 'Engine', ->
 
         beforeEach ->
             @engine = Engine()
+            @engine.start()
 
         it 'should be a function', ->
             expect(@engine).to.respondTo 'onUpdate'
@@ -438,6 +444,7 @@ describe 'Engine', ->
 
         beforeEach ->
             @engine = Engine()
+            @engine.start()
 
         it 'should be a function', ->
             expect(@engine).to.respondTo 'onAction'
