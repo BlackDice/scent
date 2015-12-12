@@ -168,6 +168,13 @@ describe 'Node', ->
 		it 'has property `tail` set to null', ->
 			expect(@nNode).to.have.property 'tail', null
 
+		it 'has property `types` with component types', ->
+			expect(@nNode).to.have.property 'types'
+			actual = @nNode.types
+			expected = [@cAlphaComponent, @cBetaComponent]
+			expect(actual[0]).to.equal expected[0]
+			expect(actual[1]).to.equal expected[1]
+
 		it 'responds to `each` method', ->
 			expect(@nNode).to.respondTo 'each'
 

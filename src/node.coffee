@@ -10,7 +10,7 @@ Lill = require 'lill'
 Component = require './component'
 
 {bType} = symbols = require './symbols'
-bData = Symbol 'internal data for the nodelist'
+bData = Symbol 'internal data for the node type'
 
 # Constructor function to create node type with given set
 # of component types. Used internally.
@@ -25,7 +25,7 @@ NodeType = (componentTypes) ->
 		throw new TypeError 'node type requires at least one component type'
 
 	this[ bData ] = {
-		list: componentTypes
+		types: componentTypes
 		item: createNodeItem(this, componentTypes)
 		pool: fast.bind poolNodeItem, null, []
 		ref: Symbol 'node('+componentTypes.map(mapComponentName).join(',')+')'
@@ -39,7 +39,7 @@ NodeType = (componentTypes) ->
 # defined for node type.
 NodeType::entityFits = (entity) ->
 	return false if entity[ symbols.bDisposing ]
-	for componentType in this[ bData ].list
+	for componentType in this[ bData ]['types']
 		return false unless entity.has componentType
 	return true
 
@@ -187,6 +187,10 @@ Object.defineProperties NodeType.prototype,
 		enumerable: yes
 		get: -> Lill.getSize this
 
+	'types':
+		enumerable: yes
+		get: -> this[ bData ]['types']
+
 ## NODEITEM
 
 # Creates node item constructor function having properties
@@ -235,7 +239,7 @@ BaseNodeItem::inspect = ->
 		"--entity": this[ symbols.bEntity ].inspect()
 	}
 
-	for componentType in this[ symbols.bType ][ bData ].list
+	for componentType in this[ symbols.bType ][ bData ]['types']
 		result[componentType.typeName] = this[componentType.typeName]?.inspect()
 
 	return result
@@ -243,7 +247,7 @@ BaseNodeItem::inspect = ->
 NodeType::inspect = (metaOnly) ->
 	data = this[ bData ]
 	result = {
-		"--nodeSpec": data.list.map(mapComponentName).join(',')
+		"--nodeSpec": data['types'].map(mapComponentName).join(',')
 		"--listSize": this.size
 	}
 	return result if metaOnly is yes
