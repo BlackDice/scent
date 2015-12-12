@@ -1,5 +1,6 @@
 {expect, sinon, resetComponentIdentities, mockSystem} = require './setup'
 Engine = require '../src/engine'
+Entity = require '../src/entity'
 Component = require '../src/component'
 symbols = require '../src/symbols'
 
@@ -73,11 +74,11 @@ describe 'Engine', ->
             expect(nTest1).to.not.equal nTest3
 
         it 'should fill node type with existing entities', ->
-            firstEntity = @engine.addEntity [
+            firstEntity = @engine.buildEntity [
                 new @cAlphaComponent
                 new @cGamaComponent
             ]
-            secondEntity = @engine.addEntity [
+            secondEntity = @engine.buildEntity [
                 new @cAlphaComponent
                 new @cBetaComponent
             ]
@@ -93,19 +94,46 @@ describe 'Engine', ->
         it 'should be a function', ->
             expect(@engine).to.respondTo 'addEntity'
 
+        it 'should accept existing entity', ->
+            alpha = new @cAlphaComponent
+            beta = new @cBetaComponent
+            entity = new Entity [alpha, beta]
+            @engine.addEntity entity
+
+            expect(Lill.has @engine.entityList, entity).to.be.true
+            entity.dispose()
+
+        it 'should return same entity', ->
+            alpha = new @cAlphaComponent
+            beta = new @cBetaComponent
+            entity = new Entity [alpha, beta]
+            entity2 = @engine.addEntity entity
+
+            expect(entity).to.equal entity2
+            entity.dispose()
+            entity2.dispose()
+
+    describe 'instance.buildEntity()', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'buildEntity'
+
         it 'should return new entity instance', ->
-            expect(entity = @engine.addEntity()).to.be.an "object"
+            expect(entity = @engine.buildEntity()).to.be.an "object"
             expect(entity).to.respondTo 'add'
             expect(entity).to.respondTo 'has'
             expect(entity).to.respondTo 'get'
-            expect(entity2 = @engine.addEntity()).to.not.equal entity
+            expect(entity2 = @engine.buildEntity()).to.not.equal entity
             entity.dispose()
             entity2.dispose()
 
         it 'should return entity with components added', ->
             alpha = new @cAlphaComponent
             beta = new @cBetaComponent
-            entity = @engine.addEntity [alpha, beta]
+            entity = @engine.buildEntity [alpha, beta]
 
             expect(entity.size).to.equal 2
             expect(entity.has @cAlphaComponent).to.be.true
@@ -122,13 +150,13 @@ describe 'Engine', ->
             expect(Lill.isAttached @engine.entityList).to.be.true
 
         it 'contains engine owned entities', ->
-            entity1 = @engine.addEntity()
-            entity2 = @engine.addEntity()
+            entity1 = @engine.buildEntity()
+            entity2 = @engine.buildEntity()
             expect(Lill.has @engine.entityList, entity1).to.be.true
             expect(Lill.has @engine.entityList, entity2).to.be.true
 
         it 'removes disposed entities', ->
-            entity = @engine.addEntity()
+            entity = @engine.buildEntity()
             entity.dispose()
             expect(Lill.has @engine.entityList, entity).to.be.false
 
@@ -291,7 +319,7 @@ describe 'Engine', ->
             @nAlphaNode = @engine.getNodeType [@cAlphaComponent]
             @nBetaNode = @engine.getNodeType [@cBetaComponent]
             @nGamaNode = @engine.getNodeType [@cGamaComponent]
-            @eTestEntity = @engine.addEntity [new @cAlphaComponent, new @cBetaComponent]
+            @eTestEntity = @engine.buildEntity [new @cAlphaComponent, new @cBetaComponent]
 
         afterEach ->
             @eTestEntity.dispose()
@@ -472,7 +500,7 @@ describe 'Engine', ->
             expect(@engine.size).to.equal 0
 
         it 'returns number of entities in engine', ->
-            @engine.addEntity() for i in [1..10]
+            @engine.buildEntity() for i in [1..10]
             expect(@engine.size).to.equal 10
 
     describe 'provide()', ->

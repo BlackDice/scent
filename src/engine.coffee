@@ -32,12 +32,19 @@ Engine = (initializer) ->
 
 	engine.entityList = Lill.attach {}
 
-	# Only method to add entity to engine
-	engine.addEntity = (components) ->
-		entity = Entity components
+	# Add existing entity to engine
+	engine.addEntity = (entity) ->
+		if entity instanceof Array
+			log 'Passing array of components to addEntity method is deprecated. Use buildEntity method instead.'
+			entity = new Entity entity
+
 		Lill.add engine.entityList, entity
 		addedEntities.push entity
 		return entity
+
+	# Build entity from array of components
+	engine.buildEntity = (components) ->
+		engine.addEntity new Entity components
 
 	Object.defineProperty engine, 'size', get: ->
 		Lill.getSize engine.entityList
