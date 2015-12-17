@@ -10,7 +10,7 @@ To define component type you have to designate what properties you want to manag
 	var cBuilding = new Scent.Component('building', 'floors height roofType');
 ```
 
- * First argument is the name of the component. It helps to identify what are you currently looking at and also to automate some other tasks (see Node).
+ * First argument is the name of the component. It helps to identify what are you currently looking at, to register component to the Engine and also to automate some other tasks (see Node).
 
  * Second argument is optional and contains list of properties you want to define for a component type.
 
@@ -91,7 +91,7 @@ In many situations you may have components that are being used for quite short t
 	drop.size = 'huge'
 ```
 
-When the component is created using `pooled` method for the first time, internal pool is made. Releasing (see below) component instance of that type stores it and next call to `pooled` method resultes instance from the pool.
+When the component is created using `pooled` method for the first time, internal pool is made. Releasing (see below) component instance of that type stores it and next call to `pooled` method reuses instance from the pool.
 
 ## Destroy component
 

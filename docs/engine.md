@@ -69,12 +69,45 @@ Once single action type has run through all registered callback functions, the `
 
 Note that trying to trigger action without single registered handler will basically throw away such actions. This is to prevent stacking up in memory without anyone interested.
 
+## Component registration
+
+Engine contains optional register of component types which can used to simplify interaction with other parts of framework. Instead of keeping component type references, you can use any kind of your own identification in the register. By default the type name stored in component type will be used.
+
+```js
+    var cBuilding = new Scent.Component('building', 'floors height roofType')
+	engine.registerComponent(cBuilding);
+
+    var cHasRoof = new Scent.Component('hasRoof');
+    var bRoofOwner = Symbol('you can any object as identification')
+	engine.registerComponent(cHasRoof, bRoofOwner);
+```
+
+Then you can create new component instance anytime you have access to your engine.
+
+```js
+	var building = engine.createComponent('building');
+	var roof = engine.createComponent(bRoofOwner);
+```
+
+Or you can access component type, eg. for serialization purposes.
+
+```js
+	var cBuilding = engine.accessComponent('building');
+	var cHasRoof = engine.accessComponent(bRoofOwner);
+```
+
+### Custom provider
+
+If you don't want to store component types within Engine, but you still want to use benefits described further, you can simply override the `accessComponent` method with some other function while [extending engine](#extensible-engine).
+
 ## Access to nodes
 
 Engine stores node types for you. All node types you access through the engine are remembered and you can access them from anywhere you like.
 
 ```js
 	var nStructure = engine.getNodeType([cBuilding, cFoundation]);
+	// or with registered component types...
+	var nStructure = engine.getNodeType(['building', 'foundation']);
 ```
 
 As mentioned above, nodes are updated during update cycle after actions were processed. To actually loop through available node types, you should proceed like this:
@@ -95,27 +128,22 @@ You can also use `onAdded` and `onRemoved` method to register your handlers. The
 Engine keeps the list of all entities for you. It also automatically informs existing node types about these. All you need to do is call method `buildEntity`.
 
 ```js
-	var building, foundation;
-	var eCorporateBuilding = engine.buildEntity([
-		building = new cBuilding,
-		foundation = new cFoundation
-	]);
-	building.floors = 10;
+	var foundation = engine.createComponent('foundation');
 	foundation.material = 'stone';
+
+	// you can mix the use of registered component types and instances together
+	var eCorporateBuilding = engine.buildEntity(['building', foundation]);
+	eCorporateBuilding.get('building').floors = 10;
 ```
 
 You can also add existing entities with `addEntity`.
 
 ```js
-	var building = new cBuilding;
+	var building = engine.createComponent('building');
 	building.floors = 10;
 
-	var foundation = new cFoundation;
-	foundation.material = 'stone';
-
-	var eCorporateBuilding = new Scent.Entity();
-	eCorporateBuilding.add(building);
-	eCorporateBuilding.add(foundation);
+	var eCorporateBuilding = new Scent.Entity([building, 'foundation']);
+	eCorporateBuilding.get('foundation').material = 'stone';
 
 	engine.addEntity(eCorporateBuilding);
 ```
@@ -227,4 +255,4 @@ If you specify function, it will be called every time when some system asks for 
 
 ## Multiple engines?
 
-Technically you can create multiple engine instances, but they do not share any resources except component types (which are basically global). You cannot share entities with multiple engine simply because there is no built-in method to add existing entity in the engine instance.
+Technically you can create multiple engine instances, but they do not share any resources (except component types which are somewhat global due to identity number). Single entity can added to multiple engines with addEntity method, but you need to synchronize your engines properly to make that work.

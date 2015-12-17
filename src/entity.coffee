@@ -14,16 +14,17 @@ bComponents = Symbol 'map of components in the entity'
 bSetup = Symbol 'private setup method for entity'
 bComponentChanged = Symbol 'timestamp of change of component list'
 bDisposedComponents = Symbol 'list of disposed components'
+bComponentProvider = Symbol 'component provided passed to entity'
 
 # Entity constructor function. Accepts optional array of component
 # instances that are about to be added to entity right away.
-Entity = (components) ->
+Entity = (components, componentProvider) ->
 	entity = this
 	unless entity instanceof Entity
 		entity = new Entity
 
 	entity[ bComponents ] = new Map
-	entity[ bSetup ] components
+	entity[ bSetup ] components, componentProvider
 	return entity
 
 # Adds component instance to entity. Only single instance of one
@@ -31,35 +32,39 @@ Entity = (components) ->
 # preserves the previous one while issuing log message to be notified
 # about possible logic error.
 Entity::add = (component) ->
-	validateComponent component
+	if component and component instanceof Component
+		validComponent = new component
+	else
+		validComponent = validateComponent component, this[ bComponentProvider ]
+		return this if componentIsShared(validComponent, this)
 
-	return this if componentIsShared(component, this)
-
-	if @has componentType = component[ symbols.bType ]
+	if @has componentType = validComponent[ symbols.bType ]
 		log 'entity already contains component `%s`, consider using replace method if this is intended', componentType.typeName
 		log (new Error).stack
 		return this
 
-	Entity.componentAdded.call this, component
+	Entity.componentAdded.call this, validComponent
 	return this
 
 # Remove component type from the entity and removed component
 # is marked for disposal.
 Entity::remove = (componentType) ->
-	validateComponentType componentType
-	Entity.componentRemoved.call this, componentType
+	validComponentType = validateComponentType componentType, this[ bComponentProvider ]
+	Entity.componentRemoved.call this, validComponentType
 
 # Similar to add method, but disposes component of the same type
 # before adding new one.
 Entity::replace = (component) ->
-	validateComponent component
-
-	return this if componentIsShared(component, this)
+	if component and component instanceof Component
+		validComponent = new component
+	else
+		validComponent = validateComponent component, this[ bComponentProvider ]
+		return this if componentIsShared(validComponent, this)
 
 	# remove component of same type if present
-	this.remove component[ symbols.bType ]
+	this.remove validComponent[ symbols.bType ]
 
-	Entity.componentAdded.call this, component
+	Entity.componentAdded.call this, validComponent
 	return this
 
 # Check the existence of component type within entity.
@@ -67,20 +72,20 @@ Entity::replace = (component) ->
 # Passing true in second argument will consider currently disposed
 # components.
 Entity::has = (componentType, allowDisposed) ->
-	validateComponentType componentType
+	validComponentType = validateComponentType componentType, this[ bComponentProvider ]
 
-	unless this[ bComponents ].has componentType
+	unless this[ bComponents ].has validComponentType
 		return false
-	return this.get(componentType, allowDisposed) isnt null
+	return this.get(validComponentType, allowDisposed) isnt null
 
 # Retrieve component instance by specified type.
 # Returns NULL if no component of such type is present.
 # Passing true in second argument will consider currently disposed
 # components.
 Entity::get = (componentType, allowDisposed) ->
-	validateComponentType componentType
+	validComponentType = validateComponentType componentType, this[ bComponentProvider ]
 
-	unless component = this[ bComponents ].get(componentType)
+	unless component = this[ bComponents ].get(validComponentType)
 		return null
 
 	if component[ symbols.bDisposing ]
@@ -141,10 +146,10 @@ entityPool = []
 
 # Returns entity from pool of disposed ones or created entity instance.
 # Accepts array of components same as Entity constructor.
-Entity.pooled = (components) ->
+Entity.pooled = (components, componentProvider) ->
 	return new Entity components unless entityPool.length
 	entity = entityPool.pop()
-	entity[ bSetup ] components
+	entity[ bSetup ] components, componentProvider
 	return entity
 
 ## DISPOSING
@@ -197,8 +202,9 @@ Entity::release = ->
 	if this[ symbols.bDisposing ]
 		this[ bComponents ].forEach releaseComponent
 		this[ bComponents ].clear()
-		delete this[ bComponentChanged ]
-		delete this[ symbols.bDisposing ]
+		this[ bComponentChanged ] = null
+		this[ bComponentProvider ] = null
+		this[ symbols.bDisposing ] = null
 		entityPool.push this
 		return true
 
@@ -231,19 +237,41 @@ releaseComponent = (component) ->
 	delete component[ bEntity ] if released
 	return released
 
-validateComponent = (component) ->
-	unless component
-		throw new TypeError 'missing component for entity'
-	validateComponentType component[ symbols.bType ]
+validateComponent = (component, componentProvider) ->
+	# valid component passed in, no need to worry about anything else
+	if component?[ symbols.bType ] instanceof Component
+		return component
 
-validateComponentType = (componentType) ->
-	unless componentType instanceof Component
-		throw new TypeError 'invalid component type for entity'
+	# construct new component if passed value is component type
+	if component instanceof Component
+		return new component
+
+	providedType = componentProvider?component
+	if providedType instanceof Component
+		return new providedType
+
+	throw new TypeError 'invalid component instance for entity'
+
+validateComponentType = (componentType, componentProvider) ->
+	if componentType instanceof Component
+		return componentType
+
+	if componentProvider and providedType = componentProvider(componentType)
+		return providedType
+
+	throw new TypeError 'invalid component type for entity'
 
 # Internal method to setup entity instance.
-Entity::[ bSetup ] = (components) ->
+Entity::[ bSetup ] = (components, componentProvider) ->
 	if components and not (components instanceof Array)
-		throw new TypeError 'expected array of components for entity'
+		if _.isFunction(components)
+			componentProvider = components
+			components = null
+		else
+			throw new TypeError 'expected array of components for entity'
+
+	if _.isFunction componentProvider
+		this[ bComponentProvider ] = componentProvider
 
 	# Add components passed in constructor
 	fast.forEach components, this.add, this if components

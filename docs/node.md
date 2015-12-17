@@ -16,6 +16,12 @@ This is very similar to Component, but node type doesn't have any name. All you 
 
 Since node type doesn't know anything about your defined component types, you have to pass in the actual type objects. The list will be silently filtered for duplicates and invalid objects. Error is thrown if at least one valid component type is not found.
 
+Optionally you can pass a component provider function in second argument to be used to retrieve actual component types so you can use whatever your component provider is able to convert into component type, eg. component names.
+
+```js
+	var nStructure = new Scent.Node(['building', 'foundation'], componentProvider);
+```
+
 ## Handling entities
 
 Defined node type contains internal list of *node items*. Each node item is tightly coupled to single entity and can be used for easier access to the components (more on that later).
