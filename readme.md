@@ -54,11 +54,13 @@ Following is small example how simply you can create game mechanics to close doo
 
 ```js
 	var Scent = require('scent');
+	var engine = new Scent.Engine();
 
 	var cDoor = new Scent.Component('door', 'open material');
+	engine.registerComponent(cDoor); // optional step
 
-	var engine = new Scent.Engine();
 	engine.addSystem(Scent.System.define('closeDoor', function() {
+		var nDoor = engine.getNodeType(['door']); // only if registered, otherwise...
 		var nDoor = engine.getNodeType([cDoor]);
 
 		engine.onUpdate(function(timestamp) {
@@ -86,7 +88,7 @@ Following is small example how simply you can create game mechanics to close doo
 
 	engine.onAction('doorOpen', function(action) {
 		var eDoor = action.data;
-		eDoor.get(cDoor).open = Date.now();
+		eDoor.get('door').open = Date.now();
 	});
 
 	engine.triggerAction('doorOpen', eDoor);

@@ -52,6 +52,64 @@ describe 'Engine', ->
     it 'passes `Engine.prototype.isPrototypeOf` check', ->
         expect(Engine.prototype.isPrototypeOf Engine()).to.be.true
 
+    describe 'instance.registerComponent()', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'registerComponent'
+
+        it 'expects valid component type', ->
+            test = @engine.registerComponent.bind @engine
+            toThrow = (msg, fn) ->
+                expect(fn).to.throw TypeError, /expected component type/, msg
+            toThrow 'string', -> test 'str'
+            toThrow 'number', -> test 1
+            toThrow 'bool', -> test true
+            toThrow 'false', -> test false
+            toThrow 'array', -> test []
+            toThrow 'object', -> test {}
+
+        it 'ignores component type with already registered name', ->
+            @engine.registerComponent @cAlphaComponent
+            @engine.registerComponent new Component('alpha')
+            expect(@engine.accessComponent 'alpha').to.equal @cAlphaComponent
+
+        it 'uses second argument as component type identification instead of type name', ->
+            @engine.registerComponent @cAlphaComponent, 'test'
+            @engine.registerComponent @cBetaComponent, bTest = symbols.Symbol()
+            expect(@engine.accessComponent 'test').to.equal @cAlphaComponent
+            expect(@engine.accessComponent bTest).to.equal @cBetaComponent
+
+    describe 'instance.accessComponent()', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'accessComponent'
+
+        it 'retrieves component registered by registerComponent method', ->
+            @engine.registerComponent @cAlphaComponent
+            @engine.registerComponent @cBetaComponent
+            expect(@engine.accessComponent 'alpha').to.equal @cAlphaComponent
+            expect(@engine.accessComponent 'beta').to.equal @cBetaComponent
+
+    describe 'instance.createComponent()', ->
+
+        beforeEach ->
+            @engine = Engine()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'createComponent'
+
+        it 'creates component instances registered by registerComponent method', ->
+            @engine.registerComponent @cAlphaComponent
+            @engine.registerComponent @cBetaComponent
+            expect(@engine.createComponent 'alpha').to.be.an.instanceOf @cAlphaComponent
+            expect(@engine.createComponent 'beta').to.be.an.instanceOf @cBetaComponent
+
     describe 'instance.getNodeType()', ->
 
         beforeEach ->
@@ -85,6 +143,11 @@ describe 'Engine', ->
             nTest = @engine.getNodeType [@cAlphaComponent]
             expect(nTest.size).to.equal 2
             expect(nTest.head[ symbols.bEntity ]).to.equal firstEntity
+
+        it 'should pass registered component to node type', ->
+            @engine.registerComponent @cAlphaComponent
+            nNode = @engine.getNodeType ['alpha']
+            expect(nNode.types[0]).to.equal @cAlphaComponent
 
     describe 'instance.addEntity()', ->
 
@@ -139,6 +202,17 @@ describe 'Engine', ->
             expect(entity.has @cAlphaComponent).to.be.true
             expect(entity.get @cBetaComponent).to.equal beta
             entity.dispose()
+
+        it 'uses registered components when creating an entity', ->
+            @engine.registerComponent @cAlphaComponent
+            @engine.registerComponent @cBetaComponent
+            entity = @engine.addEntity ['alpha']
+            entity.add 'beta'
+            entity.replace 'alpha'
+            expect(entity.get('alpha')).to.be.an.instanceOf @cAlphaComponent
+            expect(entity.has('beta')).to.be.true
+            entity.remove 'beta'
+            expect(entity.has('beta')).to.be.false
 
     describe 'instance.entityList', ->
 

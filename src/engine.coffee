@@ -14,6 +14,7 @@ symbols = require './symbols'
 Node = require './node'
 Entity = require './entity'
 Action = require './action'
+Component = require './component'
 
 bInitialized = symbols.Symbol("engine is initialized")
 
@@ -28,6 +29,33 @@ Engine = (initializer) ->
 	engine = this
 	isStarted = no
 
+	## COMPONENTS
+
+	componentMap = new Map
+
+	engine.registerComponent = (componentType, componentId) ->
+		unless componentType instanceof Component
+			throw new TypeError 'expected component type to engine.registerComponent, got:' + componentType
+			return
+
+		id = componentId or componentType.typeName;
+		if componentMap.has(id)
+			log 'trying to register component with id %s that is already registered', id
+			return
+
+		componentMap.set(id, componentType)
+		return
+
+	engine.accessComponent = (componentId) ->
+		return componentMap.get(componentId)
+
+	engine.createComponent = (componentId) ->
+		componentType = engine.accessComponent componentId
+		unless componentType
+			throw new TypeError 'Component ID #{componentId} is not properly registered with engine.'
+
+		return new componentType
+
 	## ENTITIES
 
 	engine.entityList = Lill.attach {}
@@ -36,7 +64,7 @@ Engine = (initializer) ->
 	engine.addEntity = (entity) ->
 		if entity instanceof Array
 			log 'Passing array of components to addEntity method is deprecated. Use buildEntity method instead.'
-			entity = new Entity entity
+			entity = new Entity entity, engine.accessComponent
 
 		Lill.add engine.entityList, entity
 		addedEntities.push entity
@@ -44,7 +72,7 @@ Engine = (initializer) ->
 
 	# Build entity from array of components
 	engine.buildEntity = (components) ->
-		engine.addEntity new Entity components
+		engine.addEntity new Entity components, engine.accessComponent
 
 	Object.defineProperty engine, 'size', get: ->
 		Lill.getSize engine.entityList
@@ -124,18 +152,20 @@ Engine = (initializer) ->
 	# type or array of multiple ones.
 	engine.getNodeType = (componentTypes) ->
 
-		validTypes = Node.validateComponentTypes componentTypes
+		validComponentTypes = Node.validateComponentTypes(
+			componentTypes, engine.accessComponent
+		)
 
-		unless validTypes?.length
+		unless validComponentTypes?.length
 			throw new TypeError 'specify at least one component type to getNodeType'
 
 		# calculate hash of component types
-		hash = fast.reduce validTypes, hashComponent, 1
+		hash = fast.reduce validComponentTypes, hashComponent, 1
 
 		# return existing node type from the map
 		return nodeType if nodeType = nodeMap[hash]
 
-		nodeType = new Node componentTypes
+		nodeType = new Node validComponentTypes, engine.accessComponent
 		nodeMap[hash] = nodeType
 		Lill.add nodeTypes, nodeType
 

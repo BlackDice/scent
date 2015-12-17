@@ -8,18 +8,20 @@ Components needs some space to live in. Usually components are related somehow t
 
 ## Adding component
 
-Entity without components is just empty meaningless shell. Lets `add` some component in there. Simply pass in the instance of component. You can call `add` method as many times as you want, but only with different component types.
+Entity without components is just empty meaningless shell. Lets add some component in there. 
+
+Method `add` accepts either a component type or actual instance of the component to be added. For a component type the entity will create empty component instance for you which you can fill with data anytime later.
 
 ```js
-	entity.add(building);
+	entity.add(cBuilding); // empty component created and added
 	entity.add(onFire);
-	entity.add(damaged);
+	entity.add(isDamaged);
 ```
 
-You can also add components to entity during its creation by passing them to constructor in array.
+You can also add components to entity during its creation by passing them to constructor in array. 
 
 ```js
-	eStructure = new Scent.Entity([building, onFire, damaged]);
+	eStructure = new Scent.Entity([building, onFire, cIsDamaged]);
 ```
 
 ## Replacing component
@@ -78,6 +80,28 @@ For a small performance gain you can also supply target array in first argument 
 	var components = [];
 	entity.getAll(components);
 ```
+
+## Use component provider
+
+Optionally you can pass a function which will be called whenever entity needs to identify component type from whatever you have passed in, eg. string or even Symbol.
+
+```js
+	var componentProvider = function (componentName) {
+		return grabComponentTypeFromMyList(componentName)
+	}
+
+	// provider will be called with string argument 'building'
+	eStructure = new Scent.Entity(['building'], componentProvider);
+	// provider is also called to create component instance without data
+	eStructure.add('onFire');
+	// or to simply check if component is present
+	eStructure.has('damaged');
+
+	// you can also omit components and just pass provider in first argument
+	eAnotherStructure = new Scent.Entity(componentProvider);
+```
+
+You can create your own component provider or use component registration in Engine which takes care of this for you.
 
 ## Chaining commands
 

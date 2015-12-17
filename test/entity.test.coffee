@@ -7,24 +7,49 @@ NoMe = require 'nome'
 
 describe 'Entity', ->
 
+	before ->
+		@cAlphaComponent = Component 'alpha', 'alphaTest'
+		@cBetaComponent = Component 'beta', 'betaTest'
+
 	it 'should be a function', ->
 		expect(Entity).to.be.a "function"
 
 	it 'being called returns in instance of entity', ->
-		expect(do Entity).to.be.an "object"
+		expect(new Entity).to.be.an "object"
 
 	it 'returns new entity instance on every call', ->
-		expected = do Entity
-		expect(do Entity).to.not.equal expected
+		expected = new Entity
+		expect(new Entity).to.not.equal expected
 
 	it 'expects optional array of components at first argument', ->
 		toThrow = (msg, fn) ->
 			expect(fn).to.throw TypeError, /expected array of components/, msg
-		toThrow 'string', -> Entity 'str'
-		toThrow 'number', -> Entity 1
-		toThrow 'bool', -> Entity true
-		toThrow 'object', -> Entity {}
-		toThrow 'function', -> Entity new Function
+		toThrow 'string', -> new Entity 'str'
+		toThrow 'number', -> new Entity 1
+		toThrow 'bool', -> new Entity true
+		toThrow 'object', -> new Entity {}
+
+	it 'calls add method for every item in array of first argument', ->
+		stub = sinon.stub Entity.prototype, 'add'
+		entity = new Entity [
+			@cAlphaComponent
+			new @cAlphaComponent
+			new @cBetaComponent
+			new @cBetaComponent
+		]
+		expect(stub.callCount).to.be.equal 4
+		stub.restore()
+
+	it 'creates empty components using component provider', ->
+		provider = sinon.spy(=> @cAlphaComponent)
+		entity = new Entity ['alpha', @cBetaComponent], provider
+		expect(provider).to.have.been.calledOnce
+
+	it 'accepts component provider as first argument if components are omitted', ->
+		provider = sinon.spy(=> @cAlphaComponent)
+		entity = new Entity provider
+		entity.add('alpha')
+		expect(provider).to.have.been.calledOnce
 
 	it 'exports `disposed` notifier', ->
 		expect(NoMe.is(Entity.disposed)).to.be.true
@@ -37,22 +62,20 @@ describe 'Entity', ->
 
 	describe 'instance', ->
 
-		before ->
-			@cAlphaComponent = Component 'alpha', 'alphaTest'
-			@cBetaComponent = Component 'beta', 'betaTest'
-
 		beforeEach ->
-			@entity = do Entity
-			@alpha = do @cAlphaComponent
-			@beta = do @cBetaComponent
+			@entity = new Entity
+			@alpha = new @cAlphaComponent
+			@beta = new @cBetaComponent
 
-		checkForComponent = (method) ->
-			expect(method).to.throw TypeError, /missing component/
-			checkForComponentType method
+			map = {
+				'alpha': @cAlphaComponent
+				'beta': @cBetaComponent
+			}
+			@provider = (name) -> map[name]
 
-		checkForComponentType = (method) ->
+		checkForComponent = (method, matchError) ->
 			toThrow = (msg, fn) ->
-				expect(fn).to.throw TypeError, /invalid component/, msg
+				expect(fn).to.throw TypeError, matchError, msg
 			toThrow 'bool', -> method true
 			toThrow 'number', -> method 1
 			toThrow 'string', -> method "foo"
@@ -72,7 +95,7 @@ describe 'Entity', ->
 		describe 'add()', ->
 
 			it 'should throw error if invalid component passed in', ->
-				checkForComponent (val) => @entity.add val
+				checkForComponent ((val) => @entity.add val), /invalid component instance/
 
 			it 'should return entity itself', ->
 				expect(@entity.add @alpha).to.equal @entity
@@ -99,13 +122,23 @@ describe 'Entity', ->
 				@entity.add @alpha
 				expect(@entity.size).to.equal 0
 
+			it 'creates component instance if component type is passed', ->
+				@entity.add @cAlphaComponent
+				expect(@entity.has(@cAlphaComponent)).to.be.true
+
+			it 'creates component instance if provider returns component type', ->
+				entity = new Entity null, @provider
+				entity.add 'alpha'
+				entity.add 'beta'
+				expect(entity.size).to.equal 2
+
 		it 'responds to replace method', ->
 			expect(@entity).to.respondTo 'replace'
 
 		describe 'replace()', ->
 
 			it 'should throw error if invalid component passed in', ->
-				checkForComponent (val) => @entity.replace val
+				checkForComponent ((val) => @entity.replace val), /invalid component instance/
 
 			it 'should return entity itself', ->
 				expect(@entity.add @alpha).to.equal @entity
@@ -142,12 +175,22 @@ describe 'Entity', ->
 				@entity.replace new @cAlphaComponent
 				expect(@entity.get @cAlphaComponent, true).to.equal @alpha
 
-			it 'ddd', ->
+			it 'component can be replaced after `release` is invoked', ->
 				@entity.add @alpha
 				@entity.remove @cAlphaComponent
 				@entity.release()
 				@entity.replace newAlpha = (new @cAlphaComponent)
 				expect(@entity.get @cAlphaComponent).to.equal newAlpha
+
+			it 'creates component instance if component type is passed', ->
+				@entity.replace @cAlphaComponent
+				expect(@entity.has(@cAlphaComponent)).to.be.true
+
+			it 'creates component instance if name of type was specified', ->
+				entity = new Entity null, @provider
+				entity.add oldAlpha = new @cAlphaComponent
+				entity.replace 'alpha'
+				expect(entity.get(@cAlphaComponent)).not.to.equal oldAlpha
 
 		it 'responds to has method', ->
 			expect(@entity).to.respondTo 'has'
@@ -155,7 +198,7 @@ describe 'Entity', ->
 		describe 'has()', ->
 
 			it 'should throw error if invalid component type passed in', ->
-				checkForComponentType (val) => @entity.has val
+				checkForComponent ((val) => @entity.has val), /invalid component type/
 
 			it 'should return false for non-existing component', ->
 				expect(@entity.has @cAlphaComponent).to.be.false
@@ -174,13 +217,19 @@ describe 'Entity', ->
 				do @alpha[ symbols.bDispose ]
 				expect(@entity.has @cAlphaComponent, true).to.be.true
 
+			it 'can handle component type by its name if provider is set', ->
+				entity = new Entity null, @provider
+				expect(entity.has('alpha')).to.be.false
+				entity.add new @cAlphaComponent
+				expect(entity.has('alpha')).to.be.true
+
 		it 'responds to get method', ->
 			expect(@entity).to.respondTo 'get'
 
 		describe 'get()', ->
 
 			it 'should throw error if invalid component type passed in', ->
-				checkForComponentType (val) => @entity.get val
+				checkForComponent ((val) => @entity.get val), /invalid component type/
 
 			it 'should return null for non-existing component', ->
 				expect(@entity.get @cAlphaComponent).to.be.null
@@ -194,6 +243,12 @@ describe 'Entity', ->
 				do @alpha[ symbols.bDispose ]
 				expect(@entity.get @cAlphaComponent).to.be.null
 
+			it 'should return a component by its name if provider is set', ->
+				entity = new Entity null, @provider
+				expect(entity.get('alpha')).to.be.null
+				entity.add alpha = new @cAlphaComponent
+				expect(entity.get('alpha')).to.be.equal alpha
+
 			it 'should return disposed component if true is passed in second argument', ->
 				@entity.add @alpha
 				do @alpha[ symbols.bDispose ]
@@ -205,7 +260,7 @@ describe 'Entity', ->
 		describe 'remove()', ->
 
 			it 'should throw error if invalid component type passed in', ->
-				checkForComponentType (val) => @entity.remove val
+				checkForComponent ((val) => @entity.remove val), /invalid component type/
 
 			it 'should dispose component instance of passed component type', ->
 				@entity.add @alpha
@@ -216,6 +271,12 @@ describe 'Entity', ->
 				@entity.add @alpha
 				@entity.remove @cBetaComponent
 				expect(@entity.size).to.equal 1
+
+			it 'should remove a component by its name if provider is set', ->
+				entity = new Entity null, @provider
+				entity.add new @cAlphaComponent
+				entity.remove('alpha')
+				expect(@entity.size).to.equal 0
 
 			it 'should call @@dispose method of removed component by default', ->
 				rem = Component.disposed.notify spy = sinon.spy()

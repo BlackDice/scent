@@ -14,21 +14,23 @@ bData = Symbol 'internal data for the node type'
 
 # Constructor function to create node type with given set
 # of component types. Used internally.
-NodeType = (componentTypes) ->
+NodeType = (componentTypes, componentProvider) ->
 
 	unless this instanceof NodeType
-		return new NodeType componentTypes
+		return new NodeType componentTypes, componentProvider
 
-	componentTypes = NodeType.validateComponentTypes componentTypes
+	validComponentTypes = NodeType.validateComponentTypes(
+		componentTypes, componentProvider
+	)
 
-	unless componentTypes?.length
+	unless validComponentTypes?.length
 		throw new TypeError 'node type requires at least one component type'
 
 	this[ bData ] = {
-		types: componentTypes
-		item: createNodeItem(this, componentTypes)
+		types: validComponentTypes
+		item: createNodeItem(this, validComponentTypes)
 		pool: fast.bind poolNodeItem, null, []
-		ref: Symbol 'node('+componentTypes.map(mapComponentName).join(',')+')'
+		ref: Symbol 'node('+validComponentTypes.map(mapComponentName).join(',')+')'
 		added: false
 		removed: false
 	}
@@ -280,17 +282,52 @@ validateEntity = (entity) ->
 		throw new TypeError 'invalid entity for node type'
 	return entity
 
-validateComponentType = (componentType) ->
-	return false unless componentType
-	return componentType instanceof Component
+bValidated = Symbol 'validated node type component list'
 
-NodeType.validateComponentTypes = (types) ->
-	unless _.isArray types
-		_types = _([types])
+NodeType.validateComponentTypes = (types, componentProvider) ->
+
+	unless _.isObject types
+		return new Array(0)
+
+	if types[bValidated]
+		return types
+
+	failed = (result) ->
+		result.length -= 1
+		return result
+
+	lastIdx = 0
+
+	validateType = (result, componentType) ->
+		unless componentType
+			return failed(result)
+
+		unless componentType instanceof Component
+			if componentProvider
+				unless providedType = componentProvider(componentType)
+					log 'invalid component type used for node:', componentType
+					return failed(result)
+				componentType = providedType
+			else
+				return failed(result)
+
+		if result.length and ~result.indexOf(componentType)
+			log 'trying to use duplicate component type for node:' + componentType.typeDefinition
+			return failed(result)
+
+		result[lastIdx] = componentType
+		lastIdx += 1
+		return result
+
+	if _.isArray types
+		validTypes = fast.reduce types, validateType, new Array(types.length)
 	else
-		_types = _(types)
+		validTypes = validateType new Array(1), types
 
-	# filter out duplicates and invalid component types
-	return _types.uniq().filter(validateComponentType).value()
+	# created array with component types is marked with symbol
+	# to avoid double validation when using getNodeType from
+	# the Engine
+	validTypes[bValidated] = true
+	return validTypes
 
 module.exports = Object.freeze NodeType

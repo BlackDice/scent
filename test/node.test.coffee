@@ -6,7 +6,7 @@ symbols = require '../src/symbols'
 
 {Map} = require 'es6'
 
-describe 'Node', ->
+describe 'NodeType', ->
 
 	beforeEach ->
 		(require './setup').resetComponentIdentities()
@@ -19,19 +19,19 @@ describe 'Node', ->
 
 		toThrow = (msg, fn) ->
 			expect(fn).to.throw TypeError, /at least one component type/, msg
-		toThrow 'number', -> Node 1
-		toThrow 'bool', -> Node true
-		toThrow 'string', -> Node 'nothing'
-		toThrow 'object', -> Node {}
-		toThrow 'empty array', -> Node []
-		toThrow 'num array', -> Node [1]
-		toThrow 'bool array', -> Node [true]
-		toThrow 'object array', -> Node [{}]
+		toThrow 'number', -> new Node 1
+		toThrow 'bool', -> new Node true
+		toThrow 'string', -> new Node 'nothing'
+		toThrow 'object', -> new Node {}
+		toThrow 'empty array', -> new Node []
+		toThrow 'num array', -> new Node [1]
+		toThrow 'bool array', -> new Node [true]
+		toThrow 'object array', -> new Node [{}]
 
 	it 'returns new node type object for each call', ->
-		actual = Node @cComponent
+		actual = new Node @cComponent
 		expect(actual).to.be.an "object"
-		expected = Node [@cComponent]
+		expected = new Node [@cComponent]
 		expect(expected).to.not.equal actual
 
 	describe 'type', ->
@@ -60,6 +60,23 @@ describe 'Node', ->
 			toThrow 'string', -> nodeList[fnName] 'nothing'
 			toThrow 'object', -> nodeList[fnName] {}
 			toThrow 'array', -> nodeList[fnName] []
+
+		it 'ignores duplicate component types', ->
+			nNode = Node [@cAlphaComponent, @cAlphaComponent]
+			expect(nNode.types).to.have.length 1
+
+		it 'invokes passed componentProvider for non-component', ->
+			componentProvider = stub = sinon.stub()
+			stub.returns @cAlphaComponent
+			nNode = Node ['alpha', @cBetaComponent], componentProvider
+			expect(stub).to.have.been.calledOnce.calledWith 'alpha'
+
+		it 'ignores component types that componentProvider failed to provide', ->
+			componentProvider = stub = sinon.stub()
+			stub.returns null
+			nNode = Node [@cAlphaComponent, 'none'], componentProvider
+			expect(nNode.types).to.have.length 1
+			expect(nNode.types[0]).to.be.equal @cAlphaComponent
 
 		it 'responds to `addEntity` method', ->
 			expect(@nNode).to.respondTo 'addEntity'
