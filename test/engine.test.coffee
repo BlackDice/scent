@@ -3,6 +3,7 @@ Engine = require '../src/engine'
 Entity = require '../src/entity'
 Component = require '../src/component'
 symbols = require '../src/symbols'
+wu = require 'wu'
 
 NoMe = require 'nome'
 Lill = require 'lill'
@@ -163,7 +164,7 @@ describe 'Engine', ->
             entity = new Entity [alpha, beta]
             @engine.addEntity entity
 
-            expect(Lill.has @engine.entityList, entity).to.be.true
+            expect(wu(@engine).has(entity)).to.be.true
             entity.dispose()
 
         it 'should return same entity', ->
@@ -214,25 +215,27 @@ describe 'Engine', ->
             entity.remove 'beta'
             expect(entity.has('beta')).to.be.false
 
-    describe 'instance.entityList', ->
+    describe 'instance[@@iterator]', ->
 
         beforeEach ->
-            @engine = Engine()
+            @engine = new Engine()
+            @entity1 = @engine.buildEntity();
+            @entity2 = @engine.buildEntity();
+            @entity3 = @engine.buildEntity();
 
-        it 'should be an object attached by Lill', ->
-            expect(@engine.entityList).to.be.an "object"
-            expect(Lill.isAttached @engine.entityList).to.be.true
+        it 'should be an iterator function', ->
+            expect(@engine[symbols.Symbol.iterator]).to.be.a 'function'
+            iterator = do @engine[symbols.Symbol.iterator]
+            expect(iterator).to.have.a.property 'next'
 
-        it 'contains engine owned entities', ->
-            entity1 = @engine.buildEntity()
-            entity2 = @engine.buildEntity()
-            expect(Lill.has @engine.entityList, entity1).to.be.true
-            expect(Lill.has @engine.entityList, entity2).to.be.true
-
-        it 'removes disposed entities', ->
-            entity = @engine.buildEntity()
-            entity.dispose()
-            expect(Lill.has @engine.entityList, entity).to.be.false
+        it 'allows to iterate over existing entities', ->
+            actual = []
+            wu(@engine).forEach((ent) -> actual.push(ent));
+            expect(actual).to.eql([
+                @entity1
+                @entity2
+                @entity3
+            ]);
 
     describe 'instance.addSystem()', ->
 
@@ -583,6 +586,7 @@ describe 'Engine', ->
         it 'returns number of entities in engine', ->
             @engine.buildEntity() for i in [1..10]
             expect(@engine.size).to.equal 10
+
 
     describe 'provide()', ->
 

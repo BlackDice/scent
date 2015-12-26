@@ -21,7 +21,8 @@
     "mocha": "^2.2.5",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.7.0",
-    "uglify-js": "^2.4.23"
+    "uglify-js": "^2.4.23",
+    "wu": "^2.1.0"
   },
   "dependencies": {
     "async": "^1.0.0",
