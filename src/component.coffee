@@ -1,7 +1,8 @@
 'use strict'
 
 log = (require 'debug') 'scent:component'
-_ = require 'lodash'
+isArray = require 'lodash/isArray'
+isString = require 'lodash/isString'
 fast = require 'fast.js'
 NoMe = require 'nome'
 
@@ -23,7 +24,7 @@ Component = (name, definition) ->
 	# in one place.
 	return definition if definition instanceof Component
 
-	unless _.isString name
+	unless isString name
 		throw new TypeError 'missing name of the component'
 
 	ComponentType = (data) ->
@@ -181,7 +182,7 @@ defineFieldProperty = (target, field, i) ->
 
 initializeData = (component, fields, data) ->
 	return unless fields.length
-	if data and _.isArray data
+	if data and isArray data
 		data.length = fields.length
 		component[ bData ] = data
 	else

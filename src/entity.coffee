@@ -1,7 +1,7 @@
 'use strict'
 
 log = (require 'debug') 'scent:entity'
-_ = require 'lodash'
+isFunction = require 'lodash/isFunction'
 NoMe = require 'nome'
 fast = require 'fast.js'
 
@@ -264,13 +264,13 @@ validateComponentType = (componentType, componentProvider) ->
 # Internal method to setup entity instance.
 Entity::[ bSetup ] = (components, componentProvider) ->
 	if components and not (components instanceof Array)
-		if _.isFunction(components)
+		if isFunction(components)
 			componentProvider = components
 			components = null
 		else
 			throw new TypeError 'expected array of components for entity'
 
-	if _.isFunction componentProvider
+	if isFunction componentProvider
 		this[ bComponentProvider ] = componentProvider
 
 	# Add components passed in constructor

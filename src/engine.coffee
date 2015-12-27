@@ -1,7 +1,9 @@
 'use strict'
 
 log = (require 'debug') 'scent:engine'
-_ = require 'lodash'
+isFunction = require 'lodash/isFunction'
+isArray = require 'lodash/isArray'
+isString = require 'lodash/isString'
 fast = require 'fast.js'
 fnArgs = require 'fn-args'
 async = require 'async'
@@ -23,7 +25,7 @@ Engine = (initializer) ->
 	unless this instanceof Engine
 		return new Engine(initializer)
 
-	if initializer? and not _.isFunction initializer
+	if initializer? and not isFunction initializer
 		throw new TypeError 'expected function as engine initializer'
 
 	engine = this
@@ -82,7 +84,7 @@ Engine = (initializer) ->
 	systemList = []
 	systemAnonCounter = 1
 	engine.addSystem = (systemInitializer) ->
-		unless systemInitializer and _.isFunction systemInitializer
+		unless systemInitializer and isFunction systemInitializer
 			throw new TypeError 'expected function for addSystem call'
 
 		if ~fast.indexOf systemList, systemInitializer
@@ -106,14 +108,14 @@ Engine = (initializer) ->
 		return engine
 
 	engine.addSystems = (list) ->
-		unless list and _.isArray list
+		unless list and isArray list
 			throw new TypeError 'expected array of system initializers'
 
 		engine.addSystem systemInitializer for systemInitializer in list
 		return engine
 
 	engine.start = (done) ->
-		if done? and not _.isFunction done
+		if done? and not isFunction done
 			throw new TypeError 'expected callback function for engine start'
 
 		if isStarted
@@ -262,9 +264,9 @@ Engine = (initializer) ->
 		return engine
 
 	engine.onAction = (actionName, callback) ->
-		unless _.isString actionName
+		unless isString actionName
 			throw new TypeError 'expected name of action for onAction call'
-		unless _.isFunction callback
+		unless isFunction callback
 			throw new TypeError 'expected callback function for onAction call'
 
 		actionType = engine.getActionType actionName
@@ -354,7 +356,7 @@ Engine = (initializer) ->
 					injections.get(argName)
 				else null
 
-				if _.isFunction injection
+				if isFunction injection
 					injection = injection.call null, engine, systemInitializer
 
 			args[i] = injection
