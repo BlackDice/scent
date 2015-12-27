@@ -1,7 +1,7 @@
 'use strict'
 
 log = (require 'debug') 'scent:action'
-_ = require 'lodash'
+isFunction = require 'lodash/lang/isFunction'
 fast = require 'fast.js'
 
 {Symbol} = require 'es6'
@@ -56,7 +56,7 @@ ActionType::trigger = (data, meta) ->
 	return action
 
 ActionType::each = (iterator, ctx) ->
-	unless iterator and _.isFunction iterator
+	unless iterator and isFunction iterator
 		throw new TypeError 'expected iterator function for the each call'
 
 	data = this[ bData ]

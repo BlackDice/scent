@@ -1,8 +1,9 @@
 'use strict'
 
 log = (require 'debug') 'scent:node'
-
-_  = require 'lodash'
+isFunction  = require 'lodash/lang/isFunction'
+isObject  = require 'lodash/lang/isObject'
+isArray  = require 'lodash/lang/isArray'
 fast = require 'fast.js'
 Lill = require 'lill'
 
@@ -132,7 +133,7 @@ NodeType::find = (predicate) ->
 # whenever new entity is added to the node type. Callbacks
 # will be executed when finish() method is invoked.
 NodeType::onAdded = (callback) ->
-	unless _.isFunction callback
+	unless isFunction callback
 		throw new TypeError 'expected callback function for onNodeAdded call'
 
 	{added} = data = this[ bData ]
@@ -146,7 +147,7 @@ NodeType::onAdded = (callback) ->
 # Similar to onAdded, but invokes callbacks for each removed
 # entity when finish() method is invoked.
 NodeType::onRemoved = (callback) ->
-	unless _.isFunction callback
+	unless isFunction callback
 		throw new TypeError 'expected callback function for onNodeRemoved call'
 
 	{removed} = data = this[ bData ]
@@ -278,7 +279,7 @@ poolNodeItem = (pool, nodeItem) ->
 	pool.push nodeItem
 
 validateEntity = (entity) ->
-	unless entity and _.isFunction(entity.get)
+	unless entity and isFunction(entity.get)
 		throw new TypeError 'invalid entity for node type'
 	return entity
 
@@ -286,7 +287,7 @@ bValidated = Symbol 'validated node type component list'
 
 NodeType.validateComponentTypes = (types, componentProvider) ->
 
-	unless _.isObject types
+	unless isObject types
 		return new Array(0)
 
 	if types[bValidated]
@@ -319,7 +320,7 @@ NodeType.validateComponentTypes = (types, componentProvider) ->
 		lastIdx += 1
 		return result
 
-	if _.isArray types
+	if isArray types
 		validTypes = fast.reduce types, validateType, new Array(types.length)
 	else
 		validTypes = validateType new Array(1), types
