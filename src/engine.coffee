@@ -1,5 +1,3 @@
-'use strict'
-
 log = (require 'debug') 'scent:engine'
 isFunction = require 'lodash/lang/isFunction'
 isArray = require 'lodash/lang/isArray'
@@ -10,15 +8,13 @@ async = require 'async'
 NoMe = require 'nome'
 Lill = require 'lill'
 
-{Map, Set} = require 'es6'
-
 symbols = require './symbols'
 Node = require './node'
 Entity = require './entity'
 Action = require './action'
 Component = require './component'
 
-bInitialized = symbols.Symbol("engine is initialized")
+bInitialized = Symbol("engine is initialized")
 
 Engine = (initializer) ->
 
