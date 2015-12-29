@@ -6,11 +6,9 @@ module and module.exports =
 	sinon: sinon = require 'sinon'
 
 chai.use require 'sinon-chai'
-# chai.use require 'chai-as-promised'
 
-symbols = require '../src/symbols'
+{Component, Symbols} = Scent
 primes = require '../src/primes'
-Component = require '../src/component'
 
 module.exports.resetComponentIdentities = ->
 	Component.identities.length = 0
@@ -18,5 +16,5 @@ module.exports.resetComponentIdentities = ->
 
 module.exports.mockSystem = (name = 'test', body) ->
 	body = sinon.spy(body) unless body
-	body[ symbols.bName ] = name
+	body[ Symbols.bName ] = name
 	return body
