@@ -1,5 +1,3 @@
-'use strict'
-
 log = (require 'debug') 'scent:node'
 isFunction  = require 'lodash/isFunction'
 isObject  = require 'lodash/isObject'
@@ -7,7 +5,6 @@ isArray  = require 'lodash/isArray'
 fast = require 'fast.js'
 Lill = require 'lill'
 
-{Symbol, Map} = require 'es6'
 Component = require './component'
 
 {bType} = symbols = require './symbols'

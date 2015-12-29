@@ -1,10 +1,7 @@
-'use strict'
-
 log = (require 'debug') 'scent:action'
 isFunction = require 'lodash/isFunction'
 fast = require 'fast.js'
 
-{Symbol} = require 'es6'
 bData = Symbol 'internal data of the action type'
 bPool = Symbol 'pool of actions for this type'
 

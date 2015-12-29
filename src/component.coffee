@@ -1,12 +1,8 @@
-'use strict'
-
 log = (require 'debug') 'scent:component'
 isArray = require 'lodash/isArray'
 isString = require 'lodash/isString'
 fast = require 'fast.js'
 NoMe = require 'nome'
-
-{Symbol, Map, Set} = require 'es6'
 
 symbols = require './symbols'
 bPool = Symbol 'pool of disposed components'
