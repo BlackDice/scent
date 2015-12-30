@@ -1,14 +1,12 @@
-'use strict'
-
 log = (require 'debug') 'scent:engine'
-_ = require 'lodash'
+isFunction = require 'lodash/lang/isFunction'
+isArray = require 'lodash/lang/isArray'
+isString = require 'lodash/lang/isString'
 fast = require 'fast.js'
 fnArgs = require 'fn-args'
 async = require 'async'
 NoMe = require 'nome'
 Lill = require 'lill'
-
-{Map, Set} = require 'es6'
 
 symbols = require './symbols'
 Node = require './node'
@@ -16,14 +14,14 @@ Entity = require './entity'
 Action = require './action'
 Component = require './component'
 
-bInitialized = symbols.Symbol("engine is initialized")
+bInitialized = Symbol("engine is initialized")
 
 Engine = (initializer) ->
 
 	unless this instanceof Engine
 		return new Engine(initializer)
 
-	if initializer? and not _.isFunction initializer
+	if initializer? and not isFunction initializer
 		throw new TypeError 'expected function as engine initializer'
 
 	engine = this
@@ -58,7 +56,11 @@ Engine = (initializer) ->
 
 	## ENTITIES
 
-	engine.entityList = Lill.attach {}
+	entityList = Lill.attach {}
+
+	Object.defineProperty engine, 'entityList', get: ->
+		log 'Accessing entityList directly is deprecated and will made private in next release. Please use iterator interface over engine instead.'
+		return entityList
 
 	# Add existing entity to engine
 	engine.addEntity = (entity) ->
@@ -66,7 +68,7 @@ Engine = (initializer) ->
 			log 'Passing array of components to addEntity method is deprecated. Use buildEntity method instead.'
 			entity = new Entity entity, engine.accessComponent
 
-		Lill.add engine.entityList, entity
+		Lill.add entityList, entity
 		addedEntities.push entity
 		return entity
 
@@ -75,14 +77,26 @@ Engine = (initializer) ->
 		engine.addEntity new Entity components, engine.accessComponent
 
 	Object.defineProperty engine, 'size', get: ->
-		Lill.getSize engine.entityList
+		Lill.getSize entityList
+
+	engine[Symbol.iterator] = ->
+		entity = Lill.getHead entityList
+		# Simple implementation of iterator interface to avoid including whole polyfill for it
+		next = ->
+			unless entity
+				return done: true
+
+			result = value: entity, done: false
+			entity = Lill.getNext entityList, entity
+			return result
+		return { next: next }
 
 	## SYSTEMS
 
 	systemList = []
 	systemAnonCounter = 1
 	engine.addSystem = (systemInitializer) ->
-		unless systemInitializer and _.isFunction systemInitializer
+		unless systemInitializer and isFunction systemInitializer
 			throw new TypeError 'expected function for addSystem call'
 
 		if ~fast.indexOf systemList, systemInitializer
@@ -106,14 +120,14 @@ Engine = (initializer) ->
 		return engine
 
 	engine.addSystems = (list) ->
-		unless list and _.isArray list
+		unless list and isArray list
 			throw new TypeError 'expected array of system initializers'
 
 		engine.addSystem systemInitializer for systemInitializer in list
 		return engine
 
 	engine.start = (done) ->
-		if done? and not _.isFunction done
+		if done? and not isFunction done
 			throw new TypeError 'expected callback function for engine start'
 
 		if isStarted
@@ -169,7 +183,7 @@ Engine = (initializer) ->
 		nodeMap[hash] = nodeType
 		Lill.add nodeTypes, nodeType
 
-		Lill.each engine.entityList, (entity) ->
+		Lill.each entityList, (entity) ->
 			nodeType.addEntity entity
 
 		return nodeType
@@ -212,7 +226,7 @@ Engine = (initializer) ->
 		return
 
 	nomeEntityDisposed = Entity.disposed.notify ->
-		return unless Lill.has engine.entityList, this
+		return unless Lill.has entityList, this
 
 		if ~(idx = addedEntities.indexOf this)
 			addedEntities.splice idx, 1
@@ -221,16 +235,16 @@ Engine = (initializer) ->
 			updatedEntities.splice idx, 1
 
 		disposedEntities.push this
-		Lill.remove engine.entityList, this
+		Lill.remove entityList, this
 
 	nomeComponentAdded = Entity.componentAdded.notify ->
-		return unless Lill.has engine.entityList, this
+		return unless Lill.has entityList, this
 
 		unless ~(addedEntities.indexOf this) or ~(updatedEntities.indexOf this)
 			updatedEntities.push this
 
 	nomeComponentRemoved = Entity.componentRemoved.notify ->
-		return unless Lill.has engine.entityList, this
+		return unless Lill.has entityList, this
 
 		unless ~(addedEntities.indexOf this) or ~(updatedEntities.indexOf this)
 			updatedEntities.push this
@@ -262,9 +276,9 @@ Engine = (initializer) ->
 		return engine
 
 	engine.onAction = (actionName, callback) ->
-		unless _.isString actionName
+		unless isString actionName
 			throw new TypeError 'expected name of action for onAction call'
-		unless _.isFunction callback
+		unless isFunction callback
 			throw new TypeError 'expected callback function for onAction call'
 
 		actionType = engine.getActionType actionName
@@ -354,7 +368,7 @@ Engine = (initializer) ->
 					injections.get(argName)
 				else null
 
-				if _.isFunction injection
+				if isFunction injection
 					injection = injection.call null, engine, systemInitializer
 
 			args[i] = injection

@@ -1,6 +1,5 @@
 {sinon, expect} = require './setup'
-Component = require '../src/component'
-symbols = require '../src/symbols'
+{Component, Symbols} = Scent
 
 describe 'Component', ->
 
@@ -74,25 +73,23 @@ describe 'Component', ->
 
 		it 'forbids to add custom properties to itself', ->
 			cComponent = Component @validName, @validFields
-			cComponent.customProperty = true
+			expect(-> cComponent.customProperty = true).to.throw
 			expect(cComponent).to.not.have.property "customProperty"
 
-		it 'provides name of component type in read-only `typeName` property', ->
+		it 'provides name of component type in `typeName` property', ->
 			cComponent = Component @validName
-			cComponent.typeName = "fakeName"
 			expect(cComponent).to.have.property "typeName", @validName
 
-		it 'provides defined fields as array in read-only `typeFields` property', ->
+		it 'provides defined fields as array in `typeFields` property', ->
 			check = (input, output) ->
 				comp = Component 'name', input
-				comp.typeFields = false
 				expect(comp.typeFields).to.eql output
 
 			check @validFields, @fieldsArray
 			check 'MoreSpace  2Tab		gAmA   #nope $not aaa-bbb', ['MoreSpace', 'gAmA']
 			check 'duplicate duplicate duplicate', ['duplicate']
 
-		it 'provides identity number as prime number in read-only `typeIdentity` property', ->
+		it 'provides identity number as prime number in `typeIdentity` property', ->
 			cComponent = Component @validName
 			expect(expected = cComponent.typeIdentity).to.be.a "Number"
 			primes = require '../src/primes'
@@ -124,10 +121,9 @@ describe 'Component', ->
 			cExpected = Component 'expected2'
 			expect(cExpected.typeIdentity).to.equal 2
 
-		it 'provides definition string in read-only `typeDefinition` property', ->
+		it 'provides definition string in `typeDefinition` property', ->
 			def = 'alpha beta gama'
 			cComponent = Component 'test', def
-			cComponent.typeDefinition = "read-only"
 			expect(cComponent.typeDefinition).to.equal "#2 #{def}"
 
 		it 'exposes list of defined properties when calling toString()', ->
@@ -150,9 +146,9 @@ describe 'Component', ->
 
 			it 'returns previously released component instance', ->
 				expected = @cComponent.pooled()
-				do expected[ symbols.bDispose ]
+				do expected[ Symbols.bDispose ]
 				expect(@cComponent.pooled()).to.not.equal expected
-				do expected[ symbols.bRelease ]
+				do expected[ Symbols.bRelease ]
 				expect(@cComponent.pooled()).to.equal expected
 
 	describe 'instance', ->
@@ -168,7 +164,7 @@ describe 'Component', ->
 			expect(@cComponent.prototype.isPrototypeOf @component).to.be.true
 
 		it 'provides component type in read-only @@type property', ->
-			expect(@component[ symbols.bType ]).to.equal @cComponent
+			expect(@component[ Symbols.bType ]).to.equal @cComponent
 
 		it 'provides properties defined by fields definition', ->
 			for field in @fieldsArray
@@ -214,68 +210,68 @@ describe 'Component', ->
 				@clock.restore()
 
 			it 'should be own property', ->
-				expect(@component[ symbols.bChanged ]).to.exist
+				expect(@component[ Symbols.bChanged ]).to.exist
 
 			it 'should equal to 0 for a fresh component', ->
-				expect(@component[ symbols.bChanged ]).to.equal 0
+				expect(@component[ Symbols.bChanged ]).to.equal 0
 
 			it 'should equal to current timestamp when value is set', ->
 				@component.test1 = 10
-				expect(@component[ symbols.bChanged ]).to.equal @now
+				expect(@component[ Symbols.bChanged ]).to.equal @now
 
 			it 'should update timestamp for following data change', ->
 				@component.test1 = 10
 				@clock.tick 500
 				@component.test2 = 20
-				expect(@component[ symbols.bChanged ]).to.equal @now + 500
+				expect(@component[ Symbols.bChanged ]).to.equal @now + 500
 
 			it 'should not update timestamp when setting unknown property', ->
 				@component.test1 = 10
 				@clock.tick 500
 				@component.test10 = 10
-				expect(@component[ symbols.bChanged ]).to.equal @now
+				expect(@component[ Symbols.bChanged ]).to.equal @now
 
 		describe '@@dispose', ->
 
 			it 'should be a function', ->
-				expect(@component[ symbols.bDispose ]).to.be.an "function"
+				expect(@component[ Symbols.bDispose ]).to.be.an "function"
 
 			it 'should set @@disposing property to current timestamp', ->
 				clock = sinon.useFakeTimers now = Date.now()
-				do @component[ symbols.bDispose ]
-				expect(@component).to.have.property symbols.bDisposing, now
+				do @component[ Symbols.bDispose ]
+				expect(@component).to.have.property Symbols.bDisposing, now
 				clock.restore()
 
 		describe '@@release', ->
 
 			it 'should be a function', ->
-				expect(@component[ symbols.bRelease ]).to.be.an "function"
+				expect(@component[ Symbols.bRelease ]).to.be.an "function"
 
 			it 'should remove data when component is disposed', ->
 				@component.test1 = 'a'
 				@component.test3 = 'b'
-				do @component[ symbols.bRelease ]
+				do @component[ Symbols.bRelease ]
 				expect(@component.test1).to.equal 'a'
 				expect(@component.test3).to.equal 'b'
-				do @component[ symbols.bDispose ]
-				do @component[ symbols.bRelease ]
+				do @component[ Symbols.bDispose ]
+				do @component[ Symbols.bRelease ]
 				expect(@component.test1).to.not.be.ok
 				expect(@component.test3).to.not.be.ok
 
 			it 'should reset @@changed property for disposed component', ->
 				@component.test1 = 10
-				do @component[ symbols.bDispose ]
-				do @component[ symbols.bRelease ]
-				expect(@component[ symbols.bChanged ]).to.equal 0
+				do @component[ Symbols.bDispose ]
+				do @component[ Symbols.bRelease ]
+				expect(@component[ Symbols.bChanged ]).to.equal 0
 
 			it 'should return false if component is not disposed', ->
-				expect(do @component[ symbols.bRelease ]).to.be.false
+				expect(do @component[ Symbols.bRelease ]).to.be.false
 
 			it 'should return true if component has been released', ->
-				do @component[ symbols.bDispose ]
-				expect(do @component[ symbols.bRelease ]).to.be.true
+				do @component[ Symbols.bDispose ]
+				expect(do @component[ Symbols.bRelease ]).to.be.true
 
 			it 'should reset @@disposing property', ->
-				do @component[ symbols.bDispose ]
-				do @component[ symbols.bRelease ]
-				expect(@component).to.not.have.property symbols.bDisposing
+				do @component[ Symbols.bDispose ]
+				do @component[ Symbols.bRelease ]
+				expect(@component).to.not.have.property Symbols.bDisposing

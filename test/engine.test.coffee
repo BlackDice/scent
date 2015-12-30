@@ -1,8 +1,6 @@
 {expect, sinon, resetComponentIdentities, mockSystem} = require './setup'
-Engine = require '../src/engine'
-Entity = require '../src/entity'
-Component = require '../src/component'
-symbols = require '../src/symbols'
+{Engine, Entity, Component, Symbols} = Scent
+wu = require 'wu'
 
 NoMe = require 'nome'
 Lill = require 'lill'
@@ -40,11 +38,11 @@ describe 'Engine', ->
             .calledWith(engine)
         Engine (engine2) ->
             expect(Object.isExtensible engine2).to.be.true
-            do engine[ symbols.bDispose ]
-            do engine2[ symbols.bDispose ]
+            do engine[ Symbols.bDispose ]
+            do engine2[ Symbols.bDispose ]
 
     afterEach ->
-        do @engine?[ symbols.bDispose ]
+        do @engine?[ Symbols.bDispose ]
 
     it 'instance passes the `instanceof`', ->
         expect(Engine()).to.be.an.instanceof Engine
@@ -78,7 +76,7 @@ describe 'Engine', ->
 
         it 'uses second argument as component type identification instead of type name', ->
             @engine.registerComponent @cAlphaComponent, 'test'
-            @engine.registerComponent @cBetaComponent, bTest = symbols.Symbol()
+            @engine.registerComponent @cBetaComponent, bTest = Symbol()
             expect(@engine.accessComponent 'test').to.equal @cAlphaComponent
             expect(@engine.accessComponent bTest).to.equal @cBetaComponent
 
@@ -142,7 +140,7 @@ describe 'Engine', ->
             ]
             nTest = @engine.getNodeType [@cAlphaComponent]
             expect(nTest.size).to.equal 2
-            expect(nTest.head[ symbols.bEntity ]).to.equal firstEntity
+            expect(nTest.head[ Symbols.bEntity ]).to.equal firstEntity
 
         it 'should pass registered component to node type', ->
             @engine.registerComponent @cAlphaComponent
@@ -163,7 +161,7 @@ describe 'Engine', ->
             entity = new Entity [alpha, beta]
             @engine.addEntity entity
 
-            expect(Lill.has @engine.entityList, entity).to.be.true
+            expect(wu(@engine).has(entity)).to.be.true
             entity.dispose()
 
         it 'should return same entity', ->
@@ -214,25 +212,27 @@ describe 'Engine', ->
             entity.remove 'beta'
             expect(entity.has('beta')).to.be.false
 
-    describe 'instance.entityList', ->
+    describe 'instance[@@iterator]', ->
 
         beforeEach ->
-            @engine = Engine()
+            @engine = new Engine()
+            @entity1 = @engine.buildEntity();
+            @entity2 = @engine.buildEntity();
+            @entity3 = @engine.buildEntity();
 
-        it 'should be an object attached by Lill', ->
-            expect(@engine.entityList).to.be.an "object"
-            expect(Lill.isAttached @engine.entityList).to.be.true
+        it 'should be an iterator function', ->
+            expect(@engine[Symbol.iterator]).to.be.a 'function'
+            iterator = do @engine[Symbol.iterator]
+            expect(iterator).to.have.a.property 'next'
 
-        it 'contains engine owned entities', ->
-            entity1 = @engine.buildEntity()
-            entity2 = @engine.buildEntity()
-            expect(Lill.has @engine.entityList, entity1).to.be.true
-            expect(Lill.has @engine.entityList, entity2).to.be.true
-
-        it 'removes disposed entities', ->
-            entity = @engine.buildEntity()
-            entity.dispose()
-            expect(Lill.has @engine.entityList, entity).to.be.false
+        it 'allows to iterate over existing entities', ->
+            actual = []
+            wu(@engine).forEach((ent) -> actual.push(ent));
+            expect(actual).to.eql([
+                @entity1
+                @entity2
+                @entity3
+            ]);
 
     describe 'instance.addSystem()', ->
 
@@ -261,19 +261,19 @@ describe 'Engine', ->
         it 'sets @@name property to system1 if anonymous function is passed', ->
             anon = new Function
             @engine.addSystem anon
-            expect(anon[ symbols.bName ]).to.equal 'system1'
+            expect(anon[ Symbols.bName ]).to.equal 'system1'
 
         it 'sets @@name property based on name property of the function', ->
             `function namedFunction() {}`
             @engine.addSystem namedFunction
-            expect(namedFunction[ symbols.bName ]).to.equal 'namedFunction'
+            expect(namedFunction[ Symbols.bName ]).to.equal 'namedFunction'
 
         it 'sets @@name property to system2 for next anonymous function', ->
             anon1 = new Function
             anon2 = new Function
             `function namedFunction() {}`
             @engine.addSystems [anon1, namedFunction, anon2]
-            expect(anon2[ symbols.bName ]).to.equal 'system2'
+            expect(anon2[ Symbols.bName ]).to.equal 'system2'
 
         it 'expects unique name of the system', ->
             `function namedFunction() {}`
@@ -577,12 +577,13 @@ describe 'Engine', ->
 
         it 'is read-only property equal to 0 for empty engine', ->
             expect(@engine).to.have.property "size"
-            @engine.size = 500
+            expect(=> @engine.size = 500).to.throw
             expect(@engine.size).to.equal 0
 
         it 'returns number of entities in engine', ->
             @engine.buildEntity() for i in [1..10]
             expect(@engine.size).to.equal 10
+
 
     describe 'provide()', ->
 
@@ -650,7 +651,7 @@ describe 'Engine', ->
         it 'injects values returned from injection function', ->
             engine = Engine (engine, provide) ->
                 provide 'dyn', (engine, systemInitializer) ->
-                    return systemInitializer[ symbols.bName ]
+                    return systemInitializer[ Symbols.bName ]
             engine.addSystem mockSystem 'expected', (dyn) ->
                 expect(dyn).to.equal 'expected'
             engine.start()

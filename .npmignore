@@ -1,0 +1,11 @@
+.gitignore
+.npmignore
+.travis.yml
+
+*.md
+docs
+src
+dist
+
+scent.sublime*
+webpack*
