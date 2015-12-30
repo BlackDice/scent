@@ -1,6 +1,5 @@
 {expect} = require './setup'
-System = require '../src/system'
-symbols = require '../src/symbols'
+{System, Symbols} = Scent
 
 describe 'System', ->
 
@@ -40,4 +39,4 @@ describe 'System', ->
 
 		it 'sets @@name property on returned function', ->
 			actual = System.define name = 'test', ->
-			expect(actual[ symbols.bName ]).to.equal name
+			expect(actual[ Symbols.bName ]).to.equal name

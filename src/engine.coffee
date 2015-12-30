@@ -1,14 +1,12 @@
-'use strict'
-
 log = (require 'debug') 'scent:engine'
-_ = require 'lodash'
+isFunction = require 'lodash/lang/isFunction'
+isArray = require 'lodash/lang/isArray'
+isString = require 'lodash/lang/isString'
 fast = require 'fast.js'
 fnArgs = require 'fn-args'
 async = require 'async'
 NoMe = require 'nome'
 Lill = require 'lill'
-
-{Map, Set} = require 'es6'
 
 symbols = require './symbols'
 Node = require './node'
@@ -16,14 +14,14 @@ Entity = require './entity'
 Action = require './action'
 Component = require './component'
 
-bInitialized = symbols.Symbol("engine is initialized")
+bInitialized = Symbol("engine is initialized")
 
 Engine = (initializer) ->
 
 	unless this instanceof Engine
 		return new Engine(initializer)
 
-	if initializer? and not _.isFunction initializer
+	if initializer? and not isFunction initializer
 		throw new TypeError 'expected function as engine initializer'
 
 	engine = this
@@ -81,7 +79,7 @@ Engine = (initializer) ->
 	Object.defineProperty engine, 'size', get: ->
 		Lill.getSize entityList
 
-	engine[symbols.Symbol.iterator] = ->
+	engine[Symbol.iterator] = ->
 		entity = Lill.getHead entityList
 		# Simple implementation of iterator interface to avoid including whole polyfill for it
 		next = ->
@@ -98,7 +96,7 @@ Engine = (initializer) ->
 	systemList = []
 	systemAnonCounter = 1
 	engine.addSystem = (systemInitializer) ->
-		unless systemInitializer and _.isFunction systemInitializer
+		unless systemInitializer and isFunction systemInitializer
 			throw new TypeError 'expected function for addSystem call'
 
 		if ~fast.indexOf systemList, systemInitializer
@@ -122,14 +120,14 @@ Engine = (initializer) ->
 		return engine
 
 	engine.addSystems = (list) ->
-		unless list and _.isArray list
+		unless list and isArray list
 			throw new TypeError 'expected array of system initializers'
 
 		engine.addSystem systemInitializer for systemInitializer in list
 		return engine
 
 	engine.start = (done) ->
-		if done? and not _.isFunction done
+		if done? and not isFunction done
 			throw new TypeError 'expected callback function for engine start'
 
 		if isStarted
@@ -278,9 +276,9 @@ Engine = (initializer) ->
 		return engine
 
 	engine.onAction = (actionName, callback) ->
-		unless _.isString actionName
+		unless isString actionName
 			throw new TypeError 'expected name of action for onAction call'
-		unless _.isFunction callback
+		unless isFunction callback
 			throw new TypeError 'expected callback function for onAction call'
 
 		actionType = engine.getActionType actionName
@@ -370,7 +368,7 @@ Engine = (initializer) ->
 					injections.get(argName)
 				else null
 
-				if _.isFunction injection
+				if isFunction injection
 					injection = injection.call null, engine, systemInitializer
 
 			args[i] = injection
