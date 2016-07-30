@@ -1,3 +1,12 @@
+0.9.0 [2016-07-30]
+
+ * register of components so they can be used more easily
+ * deprecate System.define in favor of named plain functions
+ * separate methods for creating and adding entity to the engine
+ * check for the engine to be started before running the update
+ * dropped support for Node < 4.0
+ * publish ES6 compatible source files for custom building
+
 0.8.2 [2015-05-06]
 
  * added `size` property to action type
