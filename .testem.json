@@ -1,0 +1,20 @@
+{
+	"framework": "mocha",
+	"src_files": [
+		"test/out/bundle.js"
+	],
+	"on_start": {
+		"command": "npm run testBundle -- --watch"
+	},
+	"on_exit": {
+		"command": "rm -rf test/out"
+	},
+	"launchers": {
+		"Node": {
+			"command": ".\\node_modules\\.bin\\mocha -R tap test/index.coffee",
+			"protocol": "tap"
+		}
+	},
+	"launch_in_dev": [],
+	"launch_in_ci": [ "Node" ]
+}

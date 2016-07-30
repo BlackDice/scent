@@ -8,22 +8,27 @@
   "main": "lib/scent.js",
   "license": "MIT",
   "scripts": {
-    "test": "mocha test/run.coffee",
     "compile": "coffee --no-header -bco lib/es6 src && babel -qd lib lib/es6",
     "bundle": "webpack",
-    "build": "npm run compile && npm run bundle"
+    "build": "npm run compile && npm run bundle",
+    "pretest": "npm run compile",
+    "test": "mocha test/index.coffee",
+    "testBundle": "webpack --config webpack.test.config.js",
+    "start": "testem"
   },
   "devDependencies": {
     "babel-cli": "^6.3.17",
+    "babel-loader": "^6.2.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.3.16",
     "babel-plugin-transform-runtime": "^6.3.13",
     "babel-runtime": "^6.3.19",
     "chai": "^2.3.0",
-    "chai-as-promised": "^5.0.0",
+    "coffee-loader": "^0.7.2",
     "coffee-script": "^1.10.0",
     "mocha": "^2.2.5",
-    "sinon": "^1.14.1",
-    "sinon-chai": "^2.7.0",
+    "sinon": "^2.0.0-pre",
+    "sinon-chai": "https://github.com/FredyC/sinon-chai/tarball/sinon2",
+    "testem": "^0.9.11",
     "uglify-js": "^2.4.23",
     "webpack": "^1.12.9"
   },

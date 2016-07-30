@@ -1,7 +1,5 @@
-{expect, sinon} = require './setup'
-Entity = require '../src/entity'
-Component = require '../src/component'
-symbols = require '../src/symbols'
+{Scent, expect, sinon} = require './setup'
+{Entity, Component, Symbols} = Scent
 
 NoMe = require 'nome'
 
@@ -209,12 +207,12 @@ describe 'Entity', ->
 
 			it 'should return false if component is being disposed', ->
 				@entity.add @alpha
-				do @alpha[ symbols.bDispose ]
+				do @alpha[ Symbols.bDispose ]
 				expect(@entity.has @cAlphaComponent).to.be.false
 
 			it 'should return true for disposed component if true is passed in second argument', ->
 				@entity.add @alpha
-				do @alpha[ symbols.bDispose ]
+				do @alpha[ Symbols.bDispose ]
 				expect(@entity.has @cAlphaComponent, true).to.be.true
 
 			it 'can handle component type by its name if provider is set', ->
@@ -240,7 +238,7 @@ describe 'Entity', ->
 
 			it 'should return null if component is being disposed', ->
 				@entity.add @alpha
-				do @alpha[ symbols.bDispose ]
+				do @alpha[ Symbols.bDispose ]
 				expect(@entity.get @cAlphaComponent).to.be.null
 
 			it 'should return a component by its name if provider is set', ->
@@ -251,7 +249,7 @@ describe 'Entity', ->
 
 			it 'should return disposed component if true is passed in second argument', ->
 				@entity.add @alpha
-				do @alpha[ symbols.bDispose ]
+				do @alpha[ Symbols.bDispose ]
 				expect(@entity.get @cAlphaComponent, true).to.equal @alpha
 
 		it 'responds to remove method', ->
@@ -390,7 +388,7 @@ describe 'Entity', ->
 			it 'resets disposing flag for entity', ->
 				@entity.dispose()
 				@entity.release()
-				expect(@entity).to.not.have.property symbols.bDispsing
+				expect(@entity).to.not.have.property Symbols.bDispsing
 
 			it 'should reset `changed` property to 0', ->
 				@entity.add @alpha
@@ -415,7 +413,7 @@ describe 'Entity', ->
 				cComponent = Component 'disposing', 'alpha beta'
 				component = new cComponent
 				entity = new Entity [component]
-				do component[ symbols.bDispose ]
+				do component[ Symbols.bDispose ]
 				entity.release()
 				expect(entity.has cComponent, true).to.be.false
 

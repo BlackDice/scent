@@ -1,10 +1,5 @@
-{expect, sinon} = require './setup'
-Node = require '../src/node'
-Component = require '../src/component'
-Entity = require '../src/entity'
-symbols = require '../src/symbols'
-
-{Map} = require 'es6'
+{Scent, expect, sinon} = require './setup'
+{Node, Entity, Component, Symbols} = Scent
 
 describe 'NodeType', ->
 
@@ -49,7 +44,7 @@ describe 'NodeType', ->
 			]
 
 		afterEach ->
-			@nNode.each (node) => @nNode.removeEntity node[ symbols.bEntity ]
+			@nNode.each (node) => @nNode.removeEntity node[ Symbols.bEntity ]
 
 		expectEntity = (nodeList, fnName) ->
 			toThrow = (msg, fn) ->
@@ -115,10 +110,10 @@ describe 'NodeType', ->
 					@item = @nNode.head
 
 				it 'has @@entity property equal to added entity', ->
-					expect(@item[ symbols.bEntity ]).to.equal @entity
+					expect(@item[ Symbols.bEntity ]).to.equal @entity
 
 				it 'has @@type property equal to parent node type', ->
-					expect(@item[ symbols.bType ]).to.equal @nNode
+					expect(@item[ Symbols.bType ]).to.equal @nNode
 
 				it 'has properties based on components names in the set ', ->
 					expect(@item).to.have.property @cAlphaComponent.typeName, @alpha
@@ -158,7 +153,7 @@ describe 'NodeType', ->
 
 			it 'adds entity if not on the list and it\'s compatible', ->
 				@nNode.updateEntity @entity
-				expect(@nNode.head[ symbols.bEntity ]).to.equal @entity
+				expect(@nNode.head[ Symbols.bEntity ]).to.equal @entity
 
 			it 'updates component references to current ones', ->
 				@nNode.addEntity @entity
@@ -215,9 +210,9 @@ describe 'NodeType', ->
 				spy = sinon.spy()
 				@nNode.each spy
 				expect(spy).to.have.been.calledTwice
-				expect(spy.firstCall.args[0][ symbols.bEntity ]).to.equal @entity
+				expect(spy.firstCall.args[0][ Symbols.bEntity ]).to.equal @entity
 				expect(spy.firstCall.args[1]).to.equal 0
-				expect(spy.secondCall.args[0][ symbols.bEntity ]).to.equal otherEntity
+				expect(spy.secondCall.args[0][ Symbols.bEntity ]).to.equal otherEntity
 				expect(spy.secondCall.args[1]).to.equal 1
 
 			it 'passes any additional arguments to callback with node item being first', ->
@@ -254,9 +249,9 @@ describe 'NodeType', ->
 				stub.onSecondCall().returns(true)
 				@nNode.find stub
 				expect(stub).to.have.been.calledTwice
-				expect(stub.firstCall.args[0][ symbols.bEntity ]).to.equal @entity
+				expect(stub.firstCall.args[0][ Symbols.bEntity ]).to.equal @entity
 				expect(stub.firstCall.args[1]).to.equal 0
-				expect(stub.secondCall.args[0][ symbols.bEntity ]).to.equal otherEntity
+				expect(stub.secondCall.args[0][ Symbols.bEntity ]).to.equal otherEntity
 				expect(stub.secondCall.args[1]).to.equal 1
 
 			it 'passes any additional arguments to predicate with node item being first', ->
@@ -294,7 +289,7 @@ describe 'NodeType', ->
 				expect(spy).to.not.have.been.called
 				@nNode.finish()
 				expect(spy).to.have.been.calledOnce
-				expect(spy.firstCall.args[0][ symbols.bEntity ]).to.equal @entity
+				expect(spy.firstCall.args[0][ Symbols.bEntity ]).to.equal @entity
 				spy.reset()
 				@nNode.finish()
 				expect(spy).to.not.have.been.called

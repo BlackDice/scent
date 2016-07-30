@@ -1,16 +1,17 @@
+Scent = require '../lib/scent'
+primes = require '../lib/primes'
+
+{Component, Symbols} = Scent
+
 chai = chai or require 'chai'
 
 module and module.exports =
 	chai: chai
 	expect: chai.expect
 	sinon: sinon = require 'sinon'
+	Scent: Scent
 
 chai.use require 'sinon-chai'
-# chai.use require 'chai-as-promised'
-
-symbols = require '../src/symbols'
-primes = require '../src/primes'
-Component = require '../src/component'
 
 module.exports.resetComponentIdentities = ->
 	Component.identities.length = 0
@@ -18,5 +19,5 @@ module.exports.resetComponentIdentities = ->
 
 module.exports.mockSystem = (name = 'test', body) ->
 	body = sinon.spy(body) unless body
-	body[ symbols.bName ] = name
+	body[ Symbols.bName ] = name
 	return body
