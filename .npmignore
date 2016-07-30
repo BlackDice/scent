@@ -1,11 +1,14 @@
+.babelrc
+.editorconfig
 .gitignore
 .npmignore
 .travis.yml
+.testem.json
 
 *.md
-docs
 src
 dist
+test
 
 scent.sublime*
 webpack*
