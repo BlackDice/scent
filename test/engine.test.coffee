@@ -255,30 +255,6 @@ describe 'Engine', ->
             @engine.addSystem system
             expect(=> @engine.addSystem system).to.throw Error, /already added/
 
-        it 'sets @@name property to system1 if anonymous function is passed', ->
-            anon = new Function
-            @engine.addSystem anon
-            expect(anon[ Symbols.bName ]).to.equal 'system1'
-
-        it 'sets @@name property based on name property of the function', ->
-            `function namedFunction() {}`
-            @engine.addSystem namedFunction
-            expect(namedFunction[ Symbols.bName ]).to.equal 'namedFunction'
-
-        it 'sets @@name property to system2 for next anonymous function', ->
-            anon1 = new Function
-            anon2 = new Function
-            `function namedFunction() {}`
-            @engine.addSystems [anon1, namedFunction, anon2]
-            expect(anon2[ Symbols.bName ]).to.equal 'system2'
-
-        it 'expects unique name of the system', ->
-            `function namedFunction() {}`
-            expect(=> @engine.addSystems([
-                namedFunction
-                mockSystem('namedFunction')
-            ])).to.throw TypeError, /has to be unique/
-
         it 'returns engine instance itself', ->
             expect(@engine.addSystem mockSystem()).to.equal @engine
 

@@ -86,17 +86,6 @@ Engine = (initializer) ->
 		if ~fast.indexOf systemList, systemInitializer
 			throw new Error 'system is already added to engine'
 
-		name = systemInitializer[ symbols.bName ]
-		unless name
-			name = systemInitializer.name or
-			systemInitializer.displayName or
-			'system' + (systemAnonCounter++)
-			systemInitializer[ symbols.bName ] = name
-
-		fast.forEach systemList, (storedSystem) ->
-			if storedSystem[ symbols.bName ] is name
-				throw new TypeError 'name for system has to be unique'
-
 		systemList.push systemInitializer
 		if isStarted
 			initializeSystem systemInitializer

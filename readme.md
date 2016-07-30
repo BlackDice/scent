@@ -67,7 +67,7 @@ Following is small example how simply you can create game mechanics to close doo
 	var cDoor = new Scent.Component('door', 'open material');
 	engine.registerComponent(cDoor); // optional step
 
-	engine.addSystem(Scent.System.define('closeDoor', function() {
+	engine.addSystem(function closeDoor() {
 		var nDoor = engine.getNodeType(['door']); // only if registered, otherwise...
 		var nDoor = engine.getNodeType([cDoor]);
 
