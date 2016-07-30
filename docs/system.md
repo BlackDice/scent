@@ -4,30 +4,20 @@ System is basically just wrapper around the piece of code representing game mech
 
 ## Defining the system
 
-System doesn't need to be instantiated like other parts of the framework. Thus there is simply just `define` method exported.
+System doesn't need to be instantiated like other parts of the framework. System is defined by a plain function which is run once when Engine is started to actually setup its logic. 
 
 ```js
-	var sWorker = Scent.System.define('worker', function() {
+	function sWorker($engine) {
+		var nStructure = new Scent.Node('building', 'foundating');
+		
+		$engine.onUpdate(function() {
+			nStructure.each(loopNode);
+		});
 
-	});
-```
-
-Resulting variable `sWorker` is actually equal to the passed function from the second argument. Passed system name is stored in `@@name` property.
-
-Name of the system has currently no use except filtering out duplicates when adding to the engine. In future releases when finite state machine will be implemented, name will become important.
-
-Lets mark the returned function as **system initializer**. It's role is simply to initialize system logic upon invocation. Basically you could have system like the following code.
-
-```js
-	var sWorker = Scent.System.define('worker', function() {
-		var components = require('./components');
-		var nStructure = new Scent.Node([components.cBuilding, components.cFoundation]);
-		nStructure.each(loopNode);
-	});
-
-	var loopNode = function(node) {
-		// Worker can "build" the structure by adding more components to entity
+		function loopNode(node) {
+			// Worker can "build" the structure by adding more components to entity
+		};
 	};
 ```
 
-You might be wondering now what's the purpose of this. Why you would need to wrap the function by the System constructor? Well this is tightly coupled with the Engine implementation and it will make sense once you read about it.
+**Currently there is no way to remove the system from the Engine.**

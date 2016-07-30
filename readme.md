@@ -40,15 +40,23 @@ There is notation for variables holding known types defined by this framework. A
 	aMove        action type
 	bName        symbol reference
 
-## Installation and basic usage
+## Installation
 
-Framework is available from NPM.
+You can install Scent using NPM as follows: 
 
 ```bash
 	npm install -S scent
 ```
 
-We are using CommonJS modules. You can use these in NodeJS directly or in browser with the help of Browserify. Module exports simply an object referencing all parts of the framework.
+In any environment supporting CommonJS modules, you can just use `require('scent')` to access framework stored in the _lib_ folder. In case you want to use ES6 compatible sources or perhaphs use your own transpiler, simply do `require('scent/es6')` instead.
+
+### Browser support
+
+The most straightforward way is to download [Scent standalone package](https://github.com/BlackDice/scent/tree/master/dist/scent.js) which includes all necessary dependencies. You can also download the file from [release page](https://github.com/BlackDice/scent/releases).
+
+Much more convenient and recommended way is to use bundler like Webpack or Browserify for whole application based on source files in NPM package. There is also hidden `lib/es6` folder which includes files before they were transformed by a Babel. This is useful especially for browsers with most of ES6 features implemented.
+
+## Basic usage
 
 Following is small example how simply you can create game mechanics to close door based on their material. In the real game it would be much more complex, but it should suffice for now.
 
@@ -59,7 +67,7 @@ Following is small example how simply you can create game mechanics to close doo
 	var cDoor = new Scent.Component('door', 'open material');
 	engine.registerComponent(cDoor); // optional step
 
-	engine.addSystem(Scent.System.define('closeDoor', function() {
+	engine.addSystem(function closeDoor() {
 		var nDoor = engine.getNodeType(['door']); // only if registered, otherwise...
 		var nDoor = engine.getNodeType([cDoor]);
 

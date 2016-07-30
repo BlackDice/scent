@@ -1,7 +1,5 @@
-{sinon, expect} = require './setup'
-Action = require '../src/action'
-Entity = require '../src/entity'
-symbols = require '../src/symbols'
+{Scent, sinon, expect} = require './setup'
+{Action, Entity, Symbols} = Scent
 
 describe 'Action', ->
 
@@ -35,7 +33,7 @@ describe 'Action', ->
 
 		it 'should provide name of action type in @@name property', ->
 			aAction = Action @validName
-			expect(aAction[ symbols.bName ]).to.equal @validName
+			expect(aAction[ Symbols.bName ]).to.equal @validName
 
 		it 'responds to `trigger` method', ->
 			expect(Action @validName).to.respondTo 'trigger'
