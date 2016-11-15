@@ -454,7 +454,7 @@ describe 'Engine', ->
         it 'expects callback function', ->
             {onUpdate} = @engine
             toThrow = (msg, fn) ->
-                expect(fn).to.throw TypeError, /expected function/, msg
+                expect(fn).to.throw TypeError, /expects function/, msg
             toThrow 'string', -> onUpdate 'str'
             toThrow 'number', -> onUpdate 1
             toThrow 'bool', -> onUpdate true
