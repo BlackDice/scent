@@ -22,23 +22,23 @@
     "babel-plugin-transform-es2015-modules-commonjs": "^6.3.16",
     "babel-plugin-transform-runtime": "^6.3.13",
     "babel-runtime": "^6.3.19",
-    "chai": "^2.3.0",
+    "chai": "^3.5.0",
     "coffee-loader": "^0.7.2",
     "coffee-script": "^1.10.0",
-    "mocha": "^2.2.5",
+    "mocha": "^3.1.2",
     "sinon": "^2.0.0-pre",
     "sinon-chai": "https://github.com/FredyC/sinon-chai/tarball/sinon2",
-    "testem": "^0.9.11",
+    "testem": "^1.13.0",
     "uglify-js": "^2.4.23",
     "webpack": "^1.12.9"
   },
   "dependencies": {
-    "async": "^1.0.0",
+    "async": "^2.1.2",
     "debug": "^2.2.0",
     "fast.js": "^0.1.1",
-    "fn-args": "^1.0.0",
-    "lill": "^0.4.1",
-    "lodash": "4.14.1",
-    "nome": "^0.1.3"
+    "fn-args": "^2.0.0",
+    "lill": "^0.5.0",
+    "lodash": "4.17.1",
+    "nome": "^0.2.0"
   }
 }
