@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "async": "^2.1.2",
-    "debug": "^2.2.0",
+    "debug": "^2.4.1",
     "fast.js": "^0.1.1",
     "fn-args": "^2.0.0",
     "lill": "^0.5.0",
