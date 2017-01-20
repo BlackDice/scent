@@ -17,7 +17,7 @@
     "start": "testem"
   },
   "devDependencies": {
-    "babel-cli": "^6.3.17",
+    "babel-cli": "^6.22.1",
     "babel-loader": "^6.2.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.3.16",
     "babel-plugin-transform-runtime": "^6.3.13",
