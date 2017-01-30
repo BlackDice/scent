@@ -30,7 +30,7 @@
     "sinon-chai": "https://github.com/FredyC/sinon-chai/tarball/sinon2",
     "testem": "^1.13.0",
     "uglify-js": "^2.4.23",
-    "webpack": "^1.12.9",
+    "webpack": "^2.2.1",
     "wu": "^2.1.0"
   },
   "dependencies": {
