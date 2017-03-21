@@ -201,6 +201,18 @@ describe 'Component', ->
 			expect(component.test2).to.equal 20
 			expect(component.test3).to.not.be.ok
 
+		it 'should set values based on object passed into constructor function', ->
+			component = @cComponent { x: 5, test1: 10, test2: 20, test3: 30 }
+			expect(component.test1).to.equal 10
+			expect(component.test2).to.equal 20
+			expect(component.test3).to.equal 30
+
+		it 'should keep remaining values undefined when passed object is shorter', ->
+			component = @cComponent { x: 5, test1: 10, test2: 20 }
+			expect(component.test1).to.equal 10
+			expect(component.test2).to.equal 20
+			expect(component.test3).to.not.be.ok
+
 		describe '@@changed', ->
 
 			beforeEach ->

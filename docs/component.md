@@ -65,12 +65,21 @@ Component type exposes some properties. All of these are read-only.
 Once you have component type, you can instantiate it with `new` keyword.
 
 ```js
+	var building = new cBuilding({
+		floors: 2,
+		height: 8
+	});
+```
+
+or
+
+```js
 	var building = new cBuilding();
 	building.floors = 5;
 	building.height = 10;
 ```
 
-Data in the component should be set explicitly like shown. You don't need to set all properties and you cannot set properties you haven't defined for the component type. Those will be silently ignored and thrown away.
+You don't need to set all properties and you cannot set properties you haven't defined for the component type. Those will be silently ignored and thrown away.
 
 ### Dynamically set data
 

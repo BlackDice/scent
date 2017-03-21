@@ -181,6 +181,8 @@ initializeData = (component, fields, data) ->
 	if data and isArray data
 		data.length = fields.length
 		component[ bData ] = data
+	else if data and _.isPlainObject data
+		component[ bData ] = _.map fields, (field) -> data[field]
 	else
 		component[ bData ] = new Array(fields.length)
 	return
