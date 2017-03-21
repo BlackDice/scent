@@ -1,5 +1,7 @@
 # SCENT: A System-Component-Entity framework
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BlackDice/scent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 *Make a great game with fresh scent. It smells really good !*
 
 [![Build Status](https://travis-ci.org/BlackDice/scent.svg)](https://travis-ci.org/BlackDice/scent)[![Dependencies status](https://david-dm.org/BlackDice/scent/status.svg)](https://david-dm.org/BlackDice/scent#info=dependencies)[![devDependency Status](https://david-dm.org/BlackDice/scent/dev-status.svg)](https://david-dm.org/BlackDice/scent#info=devDependencies)
