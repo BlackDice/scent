@@ -6,6 +6,7 @@
     "url": "https://github.com/BlackDice/scent.git"
   },
   "main": "lib/scent.js",
+  "types": "scent.d.ts",
   "license": "MIT",
   "scripts": {
     "compile": "coffee --no-header -bco lib/es6 src && babel -qd lib lib/es6",
