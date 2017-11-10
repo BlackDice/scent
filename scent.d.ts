@@ -29,10 +29,8 @@ declare namespace Scent {
 
 	type SystemFunction = (...args: any[]) => void;
 
-	type ComponentId = string | Component | ComponentType;
-
-	export class Engine<T = {}> {
-		constructor(initializer?: (engine: Engine<T>, provide: (name: string, injection: any) => void) => void);
+	export class Engine {
+		constructor(initializer?: (engine: Engine, provide: (name: string, injection: any) => void) => void);
 
 		registerComponent(componentType: ComponentType, componentId?: any): void;
 		accessComponent<T>(componentId: any): T & BaseComponent;
@@ -85,7 +83,7 @@ declare namespace Scent {
 
 		onAction<TData = any, TMeta = any>(actionName: any, callback: (action: ActionType<TData, TMeta>) => void): Engine;
 
-		getNodeType<T>(componentTypes: ComponentId[]): Node<T>;
+		getNodeType<T = { [key: string]: any }>(componentTypes: (string | ComponentType)[]): Node<T>;
 	}
 
 	// Entity
@@ -193,7 +191,7 @@ declare namespace Scent {
 	}
 
 	// Node
-	export class Node<T = {}> {
+	export class Node<T> {
 		constructor(componentTypes: (string | ComponentType)[], componentProvider?: (type: any) => ComponentType);
 
 		head: T & NodeItem;
@@ -211,25 +209,25 @@ declare namespace Scent {
 		 * Adds a new entity to the list. It rejects entities that are already
 		 * on the list or if required components are missing.
 		 */
-		addEntity(entity: Entity): Node;
+		addEntity(entity: Entity): Node<T>;
 
 		/**
 		 * Removes entity from the node type if it no longer fits in the node
 		 * type constraints.
 		 */
-		removeEntity(entity: Entity): Node;
+		removeEntity(entity: Entity): Node<T>;
 
 		/**
 		 * An entity that is not part of the node type will be checked against
 		 * component type constraints and added if valid; Otherwise, entity is
 		 * removed from node type forcefully.
 		 */
-		updateEntity(entity: Entity): Node;
+		updateEntity(entity: Entity): Node<T>;
 
 		/**
 		 * Loops over node items.
 		 */
-		each(loopNodes: (node: T & NodeItem, ...args: any[]) => void, ...args: any[]): Node;
+		each(loopNodes: (node: T & NodeItem, ...args: any[]) => void, ...args: any[]): Node<T>;
 
 		/**
 		 * Finds the first node item matching a predicate.
@@ -241,18 +239,18 @@ declare namespace Scent {
 		 * entity is added to the node type. Callbacks will be executed when
 		 * finish() method is invoked.
 		 */
-		onAdded(callback: (node: T & NodeItem) => void);
+		onAdded(callback: (node: T & NodeItem) => void): Node<T>;
 
 		/**
 		 * Similar to onAdded; invokes callbacks for each removed entity when
 		 * finish() method is invoked.
 		 */
-		onRemoved(callback: (node: T & NodeItem) => void);
+		onRemoved(callback: (node: T & NodeItem) => void): Node<T>;
 
 		/**
 		 * Used to invoke registered onAdded and onRemoved callbacks.
 		 */
-		finish();
+		finish(): Node<T>;
 
 		inspect(metaOnly?: boolean): Object;
 	}
