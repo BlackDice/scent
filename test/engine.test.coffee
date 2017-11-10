@@ -470,6 +470,40 @@ describe 'Engine', ->
             @engine.update(10, 20)
             expect(spy).to.have.been.calledOnce.calledWith(10, 20).calledOn @engine
 
+    describe 'instance.draw()', ->
+
+        beforeEach ->
+            @engine = Engine()
+            @engine.start()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'draw'
+
+    describe 'instance.onDraw', ->
+
+        beforeEach ->
+            @engine = Engine()
+            @engine.start()
+
+        it 'should be a function', ->
+            expect(@engine).to.respondTo 'onDraw'
+
+        it 'expects callback function', ->
+            {onDraw} = @engine
+            toThrow = (msg, fn) ->
+                expect(fn).to.throw TypeError, /expects function/, msg
+            toThrow 'string', -> onDraw 'str'
+            toThrow 'number', -> onDraw 1
+            toThrow 'bool', -> onDraw true
+            toThrow 'false', -> onDraw false
+            toThrow 'array', -> onDraw []
+            toThrow 'object', -> onDraw {}
+
+        it 'invokes passed callback when engine.draw is invoked', ->
+            @engine.onDraw(spy = sinon.spy())
+            @engine.draw(10)
+            expect(spy).to.have.been.calledOnce.calledWith(10).calledOn @engine
+
     describe 'instance.triggerAction()', ->
 
         beforeEach ->

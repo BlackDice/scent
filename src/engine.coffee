@@ -143,6 +143,10 @@ Engine = (initializer) ->
 
 	engine.onUpdate = fast.bind engine$update.notify, engine$update
 
+	engine.draw = NoMe()
+
+	engine.onDraw = fast.bind engine.draw.notify, engine.draw
+
 	## NODES
 
 	# Memory map of node types used by this engine
