@@ -14,7 +14,9 @@
     "pretest": "npm run compile",
     "test": "mocha test/index.coffee",
     "testBundle": "webpack --config webpack.test.config.js",
-    "start": "testem"
+    "start": "testem",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "devDependencies": {
     "babel-cli": "^6.3.17",
@@ -40,6 +42,8 @@
     "fn-args": "^3.0.0",
     "lill": "^0.5.0",
     "lodash": "4.17.4",
-    "nome": "^0.3.0"
-  }
+    "nome": "^0.3.0",
+    "snyk": "^1.319.0"
+  },
+  "snyk": true
 }
